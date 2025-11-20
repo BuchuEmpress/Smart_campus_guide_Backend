@@ -1,0 +1,21 @@
+# Virtual Environment
+venv/
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Data Files (contains sensitive campus info)
+data/campus_locations.json
+data/campus_locations_with_embeddings.json
+
+# Environment Variables (API keys)
+.env
+
+# Logs
+*.log
+
+# OS Files
+.DS_Store
+Thumbs.db

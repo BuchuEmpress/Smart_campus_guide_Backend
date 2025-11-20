@@ -1,0 +1,4 @@
+# list of python packages to install
+numpy==1.26.4
+torch>=2.2.0
+sentence-transformers==2.7.0
