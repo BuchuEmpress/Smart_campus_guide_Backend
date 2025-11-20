@@ -8,7 +8,7 @@ __pycache__/
 
 # Data Files (contains sensitive campus info)
 data/campus_locations.json
-data/campus_locations_with_embeddings.json
+data/campus_locations_embeddings.json
 
 # Environment Variables (API keys)
 .env
