@@ -1,4 +1,4 @@
-# Script to test embedding generation and data integrity
+# Script to test embedding generation and data integrity.
 """
 Test script for embedding generation
 Validates that embeddings were created correctly
