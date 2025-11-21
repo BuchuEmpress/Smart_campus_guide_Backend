@@ -2,6 +2,7 @@
 """
 Test script for embedding generation
 Validates that embeddings were created correctly
+Tailored for campus data without 'name' field
 """
 
 import json
@@ -17,7 +18,7 @@ from services.embedding_service import EmbeddingService
 
 def test_embeddings_exist():
     """Check if embeddings file exists and is valid"""
-    filepath = 'data/campus_locations_with_embeddings.json'
+    filepath = 'data/campus_locations_embeddings.json'
     
     if not os.path.exists(filepath):
         print("❌ Embeddings file not found!")
@@ -32,33 +33,34 @@ def test_embeddings_exist():
 
 def test_embedding_structure():
     """Validate that each location has required fields and proper embeddings"""
-    filepath = 'data/campus_locations_with_embeddings.json'
+    filepath = 'data/campus_locations_embeddings.json'
     
     with open(filepath, 'r') as f:
         locations = json.load(f)
     
-    required_fields = ['id', 'name', 'latitude', 'longitude', 'type', 'description', 'embedding']
+    # Required fields based on your data structure
+    required_fields = ['id', 'latitude', 'longitude', 'type', 'description', 'embedding']
     
     for i, location in enumerate(locations):
         # Check required fields
         missing_fields = [field for field in required_fields if field not in location]
         if missing_fields:
-            print(f"❌ Location {i} missing fields: {missing_fields}")
+            print(f"❌ Location {i} (ID: {location.get('id', 'unknown')}) missing fields: {missing_fields}")
             return False
         
         # Check embedding is a list of numbers
         embedding = location['embedding']
         if not isinstance(embedding, list):
-            print(f"❌ Location {i}: embedding is not a list")
+            print(f"❌ Location {i} (ID: {location['id']}): embedding is not a list")
             return False
         
         if len(embedding) == 0:
-            print(f"❌ Location {i}: embedding is empty")
+            print(f"❌ Location {i} (ID: {location['id']}): embedding is empty")
             return False
         
         # Check all values are numbers
         if not all(isinstance(x, (int, float)) for x in embedding):
-            print(f"❌ Location {i}: embedding contains non-numeric values")
+            print(f"❌ Location {i} (ID: {location['id']}): embedding contains non-numeric values")
             return False
     
     print(f"✅ All {len(locations)} locations have valid structure")
@@ -68,7 +70,7 @@ def test_embedding_structure():
 
 def test_embedding_similarity():
     """Test that similar locations have similar embeddings"""
-    filepath = 'data/campus_locations_with_embeddings.json'
+    filepath = 'data/campus_locations_embeddings.json'
     
     with open(filepath, 'r') as f:
         locations = json.load(f)
@@ -83,7 +85,11 @@ def test_embedding_similarity():
     
     similarity = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
     
-    print(f"✅ Similarity between '{locations[0]['name']}' and '{locations[1]['name']}': {similarity:.4f}")
+    # Use type and short description for display
+    loc1_display = f"{locations[0]['type']} ({locations[0]['id'][:15]}...)"
+    loc2_display = f"{locations[1]['type']} ({locations[1]['id'][:15]}...)"
+    
+    print(f"✅ Similarity between '{loc1_display}' and '{loc2_display}': {similarity:.4f}")
     print(f"   (Range: -1 to 1, where 1 is identical)")
     
     return True
@@ -95,30 +101,39 @@ def test_search_functionality():
     
     service = EmbeddingService()
     
-    filepath = 'data/campus_locations_with_embeddings.json'
+    filepath = 'data/campus_locations_embeddings.json'
     with open(filepath, 'r') as f:
         locations = json.load(f)
     
-    # Test query
-    query = "computer science classroom"
-    query_embedding = service.model.encode(query)
+    # Test queries relevant to your campus
+    test_queries = [
+        "main gate",
+        "landmark",
+        "university entrance"
+    ]
     
-    # Calculate similarities
-    similarities = []
-    for location in locations:
-        loc_embedding = np.array(location['embedding'])
-        similarity = np.dot(query_embedding, loc_embedding) / (
-            np.linalg.norm(query_embedding) * np.linalg.norm(loc_embedding)
-        )
-        similarities.append((location['name'], similarity))
-    
-    # Sort by similarity
-    similarities.sort(key=lambda x: x[1], reverse=True)
-    
-    print(f"Query: '{query}'")
-    print("Top 3 matches:")
-    for name, score in similarities[:3]:
-        print(f"  - {name}: {score:.4f}")
+    for query in test_queries:
+        print(f"\nQuery: '{query}'")
+        query_embedding = service.model.encode(query)
+        
+        # Calculate similarities
+        similarities = []
+        for location in locations:
+            loc_embedding = np.array(location['embedding'])
+            similarity = np.dot(query_embedding, loc_embedding) / (
+                np.linalg.norm(query_embedding) * np.linalg.norm(loc_embedding)
+            )
+            # Create display name from type and short description
+            display_name = f"{location['type']} - {location['description'][:50]}..."
+            similarities.append((display_name, similarity, location['id']))
+        
+        # Sort by similarity
+        similarities.sort(key=lambda x: x[1], reverse=True)
+        
+        print("Top 3 matches:")
+        for display_name, score, loc_id in similarities[:3]:
+            print(f"  - {display_name}")
+            print(f"    Score: {score:.4f} | ID: {loc_id[:20]}...")
     
     return True
 
@@ -160,7 +175,13 @@ def run_all_tests():
     print(f"\nTotal: {passed}/{total} tests passed")
     
     if passed == total:
-        print("\n🎉 All tests passed!")
+        print("\n🎉 All tests passed! Your embeddings are ready!")
+        print("\n📊 Your Data Structure:")
+        print("  - ID: Unique location identifier")
+        print("  - Type: Location category (landmark, building, etc.)")
+        print("  - Description: Detailed location info")
+        print("  - Coordinates: Latitude & Longitude")
+        print("  - Embedding: 384-dimensional semantic vector")
     else:
         print(f"\n⚠️ {total - passed} test(s) failed")
 
