@@ -232,12 +232,17 @@ async def navigate(request: NavigationRequest):
             humanized_directions = f"Walk to {destination_name}. Distance: {route['distance_text']}, estimated time: {route['duration_text']}."
         
         # STEP 7: Log search for analytics
+        # STEP 7: Log search for analytics
         try:
-            services['analytics'].log_search(
+            analytics_service.log_search(
                 query=request.query,
-                location_found=destination.get('name') or destination.get('display_name', request.query),
-                user_location=user_coords,
-                is_on_campus=is_on_campus
+                location_id=destination.get('id'),
+                location_name=destination.get('name') or destination.get('display_name', request.query),
+                location_type=destination.get('type'),
+                is_on_campus=is_on_campus,
+                user_location={'lat': user_coords[0], 'lon': user_coords[1]} if user_coords else None,
+                search_source='qdrant' if is_on_campus else 'osm',
+                success=True
             )
         except Exception as e:
             logger.warning(f"⚠️  Failed to log analytics: {str(e)}")

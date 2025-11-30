@@ -15,7 +15,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query, Path, Body
 from fastapi.responses import JSONResponse
 
-from api.models.topic_models import (
+from api.models.topics_models import (
     TopicCreateRequest,
     TopicResponse,
     TopicSearchRequest,

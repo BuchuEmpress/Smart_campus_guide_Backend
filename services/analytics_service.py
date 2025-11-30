@@ -144,12 +144,13 @@ class AnalyticsService:
             }
             
             # Log to MongoDB
-            logged = await self.mongo.log_search(search_data)
+           # Log to MongoDB (synchronous)
+            collection = self.mongo.db['search_analytics']
+            collection.insert_one(search_data)
             
-            if logged:
-                logger.debug(f"Search logged: '{query}' → {location_name or 'not found'}")
+            logger.debug(f"Search logged: '{query}' → {location_name or 'not found'}")
             
-            return logged
+            return True
             
         except Exception as e:
             logger.error(f"Error logging search: {str(e)}")
@@ -200,11 +201,27 @@ class AnalyticsService:
                 logger.warning(f"Date filtering not yet implemented, using all-time data")
             
             # Get popular locations from MongoDB
-            popular = await self.mongo.get_top_searched_locations(limit=limit)
+           # Get popular locations from MongoDB (synchronous)
+            collection = self.mongo.db['search_analytics']
             
-            logger.info(f"Retrieved {len(popular)} popular locations")
+            pipeline = [
+                {'$match': {'location_id': {'$exists': True, '$ne': None}}},
+                {'$group': {
+                    '_id': '$location_id',
+                    'location_name': {'$first': '$location_name'},
+                    'location_type': {'$first': '$location_type'},
+                    'is_on_campus': {'$first': '$is_on_campus'},
+                    'count': {'$sum': 1}
+                }},
+                {'$sort': {'count': -1}},
+                {'$limit': limit}
+            ]
             
-            return popular
+            results = list(collection.aggregate(pipeline))
+            
+            logger.info(f"Retrieved {len(results)} popular locations")
+            
+            return results
             
         except Exception as e:
             logger.error(f"Error getting popular locations: {str(e)}")
