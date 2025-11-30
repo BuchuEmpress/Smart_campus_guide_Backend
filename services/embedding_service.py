@@ -71,7 +71,7 @@ class EmbeddingService:
         print("Embeddings generated successfully!")
         return enriched_locations
     
-    def load_locations(self, filepath='data/campus_locations.json'):
+    def load_locations(self, filepath='data/locations/campus_locations.json'):
         """
         Load location data from JSON file
         
@@ -98,7 +98,7 @@ class EmbeddingService:
         print(f"Loaded {len(locations)} locations from {filepath}")
         return locations
     
-    def save_embeddings(self, enriched_locations, filepath='data/campus_locations_with_embeddings.json'):
+    def save_embeddings(self, enriched_locations, filepath='data/locations/campus_locations_embeddings.json'):
         """
         Save enriched location data with embeddings to JSON file
         
@@ -115,8 +115,8 @@ class EmbeddingService:
         print(f"Saved {len(enriched_locations)} locations with embeddings to {filepath}")
     
     def process_locations(self, 
-                         input_file='data/campus_locations.json',
-                         output_file='data/campus_locations_with_embeddings.json'):
+                         input_file='data/locations/campus_locations.json',
+                         output_file='data/locations/campus_locations_embeddings.json'):
         """
         Complete pipeline: Load → Generate Embeddings → Save
         

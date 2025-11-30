@@ -1,0 +1,2678 @@
+[
+  {
+    "id": "loc_1731945600423",
+    "latitude": 6.010317,
+    "longitude": 10.258816,
+    "type": "landmark",
+    "description": "The main gate of the University of Bamenda, a prominent landmark at the end of ENS Street. Easily recognizable by its large signboard, it marks the first major entrance as you approach the campus.",
+    "timestamp": "2025-11-18T16:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600943",
+    "latitude": 6.010380,
+    "longitude": 10.259017,
+    "type": "class",
+    "description": "Immediately after entering the University of Bamenda main gate, Asanji Hall 1 is clearly visible on your right. The building has its name written prominently on the front and features two entrance doors. Entering through either door leads directly inside Asanji Hall 1.",
+    "timestamp": "2025-11-18T17:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600808",
+    "latitude": 6.010312,
+    "longitude": 10.259154,
+    "type": "class",
+    "description": "Asanji Hall 2 is directly connected to Asanji Hall 1. After entering Asanji Hall 1, you'll find two doors aligned along the same wall. Passing through either of these doors leads you into Asanji Hall 2, making it feel like a continuation of the same space. The layout is seamless, with both halls sharing a direct internal connection.",
+    "timestamp": "2025-11-18T17:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600728",
+    "latitude": 6.006308,
+    "longitude": 10.257730,
+    "type": "landmark",
+    "description": "Polikiz Citè, also called Polikiz Plaza, is located before reaching the University of Bamenda campus. Starting from 4 Corners and moving ahead along ENS Street, you will find several buildings on the right side, including the Full Gospel Church built with small block structures. Beside the church, there is a narrow path. Following this path to its end, the citè appears on your left, serving as a well-known reference point just outside the main campus area.",
+    "timestamp": "2025-11-18T18:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600964",
+    "latitude": 6.010631,
+    "longitude": 10.258914,
+    "type": "landmark",
+    "description": "The Higher Teacher Training College (HTTC) at the University of Bamenda is located just beyond the main gate and is marked by a directional signboard mounted on blue poles. The building features stone-patterned walls and red roofing, giving it a solid and institutional appearance. Within HTTC, the following offices and units are present: Division of Administration and Finance, HTTC Library/Computer Unit, Cyber Security Center, Deputy Director's Office, Director's Office, Chemistry Lab, Directorate of Studies, Secretary General's Office, and Departmental Pointer. The building has a parking area in front, while behind the building are outdoor sports facilities including a lawn tennis court and handball court.",
+    "timestamp": "2025-11-20T14:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600390",
+    "latitude": 6.010731,
+    "longitude": 10.258654,
+    "type": "landmark",
+    "description": "The Central Administration of the University of Bamenda is a key landmark housing important offices such as the Vice Chancellor's office, the Registrar's office, the Directorate of Academic Affairs, the Directorate of Finance, and the Directorate of Human Resources. It is located directly opposite Asanji Hall, with the two buildings facing each other across the campus space. This makes it a central point of reference for administrative services, governance, and orientation within the university.",
+    "timestamp": "2025-11-18T20:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600337",
+    "latitude": 6.011028,
+    "longitude": 10.258637,
+    "type": "landmark",
+    "description": "The Central Library of the University of Bamenda is adjacent to the Central Administration building. It serves as the main academic resource center for students and staff, offering access to books, journals, and study spaces. Its position beside the Central Administration makes it easy to locate, with both buildings forming a central hub of academic and administrative activity on campus.",
+    "timestamp": "2025-11-18T21:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600387",
+    "latitude": 6.010656,
+    "longitude": 10.259223,
+    "type": "landmark",
+    "description": "The Faculty of Science (Block A) is one of the facilities of the University of Bamenda. It is located immediately adjacent to Asanji Hall, with the two buildings separated by only a few steps. When walking ahead along the Asanji Hall veranda, you will notice the Faculty of Science sign board slightly to your right, making the building easy to identify. Its close proximity to Asanji Hall provides a strong spatial reference point for navigation within the campus.",
+    "timestamp": "2025-11-18T22:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600342",
+    "latitude": 6.010658,
+    "longitude": 10.259647,
+    "type": "landmark",
+    "description": "The UBa Town Crier Statue is a landmark located near the Faculty of Science (Block A). After leaving the Faculty of Science and following the small path to its end, the statue becomes visible when you look upward. It stands as a symbolic figure within the University of Bamenda, positioned just beyond the Faculty of Science and serving as a notable reference point for orientation on campus.",
+    "timestamp": "2025-11-18T23:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600946",
+    "latitude": 6.010497,
+    "longitude": 10.259855,
+    "type": "department",
+    "description": "The Department of Geography and Chemistry is a stone-built facility of the University of Bamenda. It is positioned directly facing the back of the UBa Town Crier statue, with the two structures oriented toward each other. This spatial relationship makes the department easy to locate when navigating from the statue area.",
+    "timestamp": "2025-11-19T00:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600100",
+    "latitude": 6.010331,
+    "longitude": 10.259776,
+    "type": "office",
+    "description": "The Finance Office of the University of Bamenda is located adjacent to the Department of Geography and Chemistry. It sits to the left side of the Geography and Chemistry Department, making the two buildings closely connected. This positioning provides a clear spatial reference for navigation within the campus.",
+    "timestamp": "2025-11-19T01:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600594",
+    "latitude": 6.010098,
+    "longitude": 10.259484,
+    "type": "faculty",
+    "description": "The Faculty of Science (Block B) is located behind Asanji Hall at the University of Bamenda, across a small school road. Its entrance is made of plank and accessed by climbing steps. The building is constructed of rocks painted white, with a sign board positioned on the left side. From the main gate, climbing slightly upward reveals a tarred road to the left marked by iron posts controlling entrance; the sign board is visible here since the building is close to the road. Approaching from the Town Crier statue, Block B is found at the end of the school road, situated just after the Finance Office.",
+    "timestamp": "2025-11-19T02:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600340",
+    "latitude": 6.010664,
+    "longitude": 10.260052,
+    "type": "landmark",
+    "description": "The Department of Science of Education is one of the academic landmarks within the Higher Teacher Training College (HTTC) at the University of Bamenda. It is positioned on the right side of the Town Cryer, immediately after the Geography and Chemistry departments. In front of the building stands a small black signboard that identifies it. The structure itself is built with stone walls and painted white, giving it a distinctive and clean appearance. This department serves as a recognizable point within the HTTC compound and is closely related to the other academic units nearby.",
+    "timestamp": "2025-11-20T15:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600843",
+    "latitude": 6.010700,
+    "longitude": 10.260200,
+    "type": "landmark",
+    "description": "The HTTC Student's Association at the University of Bamenda is a recognized landmark within the Higher Teacher Training College compound. In front of the building stands a distinctive blue signboard that clearly identifies it. The front space of the building is furnished with white long chairs. The structure serves as a hub for student activities, representation, and coordination, making it an important point of reference within HTTC. It is located immediately after the Department of Science of Education, on the right side of that department, making the two landmarks closely connected within the compound.",
+    "timestamp": "2025-11-20T16:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600995",
+    "latitude": 6.010895,
+    "longitude": 10.260190,
+    "type": "landmark",
+    "description": "This office within the Higher Teacher Training College (HTTC) at the University of Bamenda is located to the right immediately after the HTTC Student's Association. The entrance is marked by carved plants along the climb toward the building, and an old notice board stands nearby. The office has two distinct doors, each leading to different services. On the first door, you will find the HTTC Service of Students Affairs and Examination Service for Admissions, Records, and Statistics. Offices here include: Head of Service Students Affairs and Examinations (HOS SAE), Head of Service Admissions, Records, and Statistics (HOS ARS), Secretariat, and Archiving Room. This section also covers HTTC ENS Admission and Students Record, Students Affairs, and Examination. On the second door, you will find the HTTC Division of Counseling and Orientation and the Department of Computer Sciences. Offices here include: Head of Service Internship and Cooperation, Head of Service Orientation, Head of Department Counseling and Orientation (HOD Counseling and Orientation), Student Counselor, and Head of Department Computer Science (HOD Computer Science). Together, these offices provide administrative, academic, and student support services, making the building a key functional landmark within HTTC. To the right of this building is the Directorate of Students Affairs Disabilities Service, identified by a signboard in front. In front of this structure stands a solar pole and a small signboard that reads 'Wheelchair Access – Please Do Not Park Here.' This building also has two distinct doors: the right door is marked HTTC Department of Economics, while the left door is marked HTTTC (Higher Technical Teacher Training College). The Department of Economics focuses on economic theory, policy, and applied studies, while HTTTC provides specialized training in technical and vocational education within the University of Bamenda. Moving further to the right, you will find the HTTTC/ENSET Secretary General's Office. This building is identified by a white signboard with light blue writing in front of it. The structure is built of stone and painted white, giving it a solid and clean appearance. It has two distinct doors: the right door leads to the English Modern Letters Department, while the left door leads to the Division of Training and Orientation. These offices contribute to academic coordination, language studies, and orientation services within HTTTC/ENSET. Still further to the right is the Directorate of Higher Technical Teacher Training College Bambili. The signboard in front identifies the offices housed here, including the Office of the Director, the Office of the Secretary General, and the Division of Administration and Finance. The building is equally made of stones, but unlike the Secretary General's Office, its stones are painted black. It also features a wooden entrance, giving it a distinctive appearance among the HTTTC landmarks.",
+    "timestamp": "2025-11-20T17:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600994",
+    "latitude": 6.011704,
+    "longitude": 10.260174,
+    "type": "landmark",
+    "description": "The Faculty of Health Sciences at the University of Bamenda is located to the right of the Directorate of Higher Technical Teacher Training College. The building is an upstairs structure that houses multiple classrooms and halls. On the ground floor, there are Halls 1, 2, and 3. On the second floor, you will find Hall 4 and Hall 5. To the left of Hall 4 on the second floor is the Faculty Office (FO) Secretariat, which serves as the administrative hub for the Faculty of Health Sciences. The Faculty Office manages student records, faculty coordination, and administrative services. To the right side of Hall 5 on the second floor is the Dean's Secretariat, which provides leadership and oversight for the Faculty of Health Sciences. On the campus, there is also the Faculty of Health Sciences Association, a student body organization, and its building is painted blue. Together, these halls, offices, and the association make the Faculty of Health Sciences a central academic and administrative landmark within the University of Bamenda.",
+    "timestamp": "2025-11-20T18:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600979",
+    "latitude": 6.011929,
+    "longitude": 10.260091,
+    "type": "class",
+    "description": "AMPHI 340 at the University of Bamenda is located directly in front of the Faculty of Health Sciences halls. The building serves as a large classroom and amphitheater for lectures and gatherings. On its right side, there are glass notice boards used for posting information and announcements. At the same level as these notice boards, there is a signboard that reads 'Higher Technical Teacher Training College Student's Association,' marking its connection to student activities. AMPHI 340 is a central academic class space within the campus, positioned prominently opposite the Faculty of Health Sciences halls. Moving further to the right, you will find the SOA classes SOA 1 and SOA 2. These two classes are built of stone and painted white. Behind SOA 1 and 2 is the HTTTC/ENSET Department of Social Economy and Family Management, option Home Economics, housed in a building with dark glass windows. On the first door here is this department, while moving to the right on the second door you will find the HTTTC Service in charge of Sports. The next door houses the HTTTC Head of Service in charge of Business and Innovation, and on that same door also the HTTTC Head of Service in charge of Maintenance. The following door is the HTTTC Department of Renewable Energy, headed by the HOD. Continuing to the right, attached to these offices are additional classes: SOA 12 and SOA 13, which face directly opposite SOA 15 and SOA 14. A wooden staircase stands directly in front of SOA 13. This staircase is the key access point: descending it leads you to the lower level where the sequence of SOA halls continues, specifically SOA 4 through SOA 11. Note: when you are behind SOA 1 and 2, you will see this arrangement of departments and classes. If you are on the school road, you will see SOA 1 and 2, and going down you will notice a wooden entrance. In front of this entrance is a small signboard painted light blue and white, reading 'HTTTC-ENSET Junior Enterprise Offices,' with an arrow pointing toward the wooden staircase. Taking this staircase leads you back behind SOA 1 and 2, where the departments and offices described above are located, and further down into the alignment of SOA halls.",
+    "timestamp": "2025-11-20T19:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600718",
+    "latitude": 6.010763,
+    "longitude": 10.258327,
+    "type": "landmark",
+    "description": "The Central Administration at the University of Bamenda is located behind the storey building that also serves as part of the central administration complex. This section is distinguished by having nine doors, each leading to different administrative offices. In front of the building is a large yard, which provides space for gatherings and movement. Directly opposite the Central Administration is the Central Library, a key academic resource for students and staff. Behind the Central Library is a small area marked by two cypress trees. This spot is commonly used by students for taking snapshots during clearance procedures and for official documentation such as half cards. Together, the Central Administration, its yard, the Central Library, and the cypress tree snapshot area form an important administrative and academic hub within the University of Bamenda.",
+    "timestamp": "2025-11-20T20:00:00.000Z"
+  },
+  {
+    "id": "loc_1731945600635",
+    "latitude": 6.010925,
+    "longitude": 10.258081,
+    "type": "landmark",
+    "description": "The Second Gate of the University of Bamenda is located after descending from the main gate. It regulates entry and is marked by barrier poles painted in alternating white and red. Directly facing the Second Gate is the Amazing Grace Bakery, a place where food and snacks are available. While entering through the Second Gate, to your left you will see a building made up of small blocks. In front of this building there is a blackboard and a small placard. The placard reads 'UBa Ventures Canteen – Food is Ready,' while the blackboard displays 'UBa Venture PLC Canteen Menu.' The menu listed includes traditional dishes such as ekwang, white beans, and fried plantain. Moving further along the same line, you will see a building made of stones painted white known as the Computer Center. This facility has two doors and serves as a hub for computing and digital services. Still moving forward, another stone building painted white appears, with a signboard in front reading 'University of Bamenda Directorate of Development, Physical Plans and Infrastructure (DPPI).' Within this building are the Office of the Director, the Development Division, the Physical Plant Division, and the Maintenance Division. The entrance is marked by beautifully arranged trees, and the facility has two doors. Continuing forward, you will bypass these and pass a black notice board before reaching another building made of stone but painted black: the COLTECH office. In front of this office is a green signboard displaying information in both French and English. It includes the COLTECH logo, the name of the school (COLTECH), and details of degree programs. The entrance is decorated with beautifully carved plants and trees, and in front of the office there is a chair for visitors to wait. The facility has two doors. Facing the building, the left door leads to the Directorate of COLTECH. A blue signboard here reads 'Directorate of COLTECH (College of Technology),' listing offices such as the Office of the Director, Office of the Director of Studies, Office of the Secretary General, Division of Admission and Records, and Division of Administration and Finance. Directly behind this office is the College of Technology Student Association (COSTA). Joined to COSTA is AMPHI 50, constructed by the COLTECH Student Association. Descending further from this area leads to the field where students play football.",
+    "timestamp": "2025-11-20T21:00:00.000Z"
+  },
+  {
+    "id": "loc_1732180800000",
+    "latitude": 6.012188,
+    "longitude": 10.258019,
+    "type": "landmark",
+    "description": "The football field of the University of Bamenda lies below the COLTECH Student's Association (COSTA) as you descend, with the COLTECH office positioned in front and COSTA directly behind it. Opposite the football field stands the PBA classroom block. In front of PBA there is a green notice board inscribed 'Done by HTTC (ENS) Students Association 2014/2015.' The building has two floors: on the ground floor are classrooms PBA 01 to PBA 06, and on the second floor is classroom PBA 07. Directly opposite PBA 07 are offices for the Department of Bilingual Letters (left door) and the Department of Philosophy (right door). Slightly behind the PBA block is the Higher Technical Teachers Training College (HTTTC), also called the PBB block. It has two floors. On the ground floor are classrooms PBB 01 to PBB 06, and directly opposite PBB 05 are offices for the Head of Department of Crop Production Technology, the Head of Department of Agribusiness Technology, and the Head of Department of Computer Engineering. On the second floor are classrooms PBB 07 and PBB 08; directly opposite these classrooms are offices for the Department of Forestry and Wildlife Technology, the Department of Food and Bio-Resource Technology, and the Department of Agricultural and Environmental Engineering. (PB means Pedagogic Block so for PBA it's Pedagogic Block A and for PBB it's Pedagogic Block B). Also, PBC (Pedagogic Block C) is located slightly behind (to the left) PBB so behind the PBB block when you descend the small school path it leads directly to the PBC Block. And Amphi 650 is attatched to the PBC Block; so attatched to the PBC block going behind, the rest of the building is AMphi 650, It's even written on the doors. the PBC block has two floors with the ground floor containing PBC 01 to PBC 02 and some offices like The office for the Mathematics and Geography (Under The Faculty of Science), THe second floor continues till PBC 04 and offices like \"HTTTC Division of Tertiary Sciences\", \"HTTTC Service In Charge Of Records\", \"HTTTC Division Of Industrial Techniques\", \"HTTTC Director Of Studies (Directorate Of Studies HTTTC-Bambili UBa)\", \"HTTTC Service In Charge Of Examination\" and to the Left side of the PBC block is the UBa Laboratory. And behind the Amphi 650 across the school Road is a building having two flags in front, there's a white sign board with blue writings at the top of the door written \"UNIVERSITY DIGITAL DEVELOPMENT CENTER\". Now on tha same lane for the COLTECH Office you'll find other offices like thst of the \"HTTC/ENS Department Of Physics, HTTC\"; moving forward on that same lane you'll get to a part where the road divides and one part of the school road goes up (ascends) and the other goes down (descends) and on that place it divied you'll find a white sign board and written on it ... \"THE UNIVERSITY OF BAMENDA  THE HIGHER TECHNICAL TEACHER TRAINING COLLEGE and continuing.... you'd find offices like \"HTTTC/ENSET WORKSHOP - DEPUTY DIRECTOR OF HTTTC - SERVICE FOR TRAINING AND INTERNSHIP - SERVICE FOR ORIENTATION;  you'd find the Head Of Departments' Office for - CIVIL ENGINEERING AND FORESTRY TECHNIQUE - ADMINISTRATIVE TECHNIQUE - COMPUTER SCIENCE - FUNDAMENTAL SCIENCE - SCIENCE OF EDUCATION - ELECTRICAL AND POWER ENGINEERING - SOCIAL ECONOMY AND FAMILY MANAGEMENT - LAW - MECHANICAL ENGINEERING - RENEWABLE ENERGY\" and there we have it\" and this same building is at the left side of the PBB block cos the building is really big... it has two gates at the back of the building . Below the football field, there is a small entrance to the left. At the beginning of this entrance stands a white signboard with 'Faculty of Education' written on it. Under that are 'Vice Dean in charge of Programming and Academic Affairs (VD/PAA)' and 'Faculty Officers (FO).' Taking this entrance leads to the LC (Lower Campus) classrooms, ranging from LC 01 to LC 10. LC 10 is joined to the Biology Laboratory. At the top left of the Biology Laboratory is the Geology Laboratory. The sign on the Geology Laboratory is faint and difficult to read. On this same building(Geology Laboratory), which stands in front of the Biology Laboratory but to its left, there is also a notice board and another door without labeling.",
+    "timestamp": "2025-11-21T09:00:00.000Z"
+  },
+  {
+    "id": "loc_1732181400000",
+    "latitude": 6.012534,
+    "longitude": 10.256504,
+    "type": "landmark",
+    "description": "Located directly opposite the Lower Campus (LC) classrooms. When descending from LC09 or LC10 via the small footpath, cross the small tarred school road at the Third Gate entrance of the University of Bamenda. The restaurant faces the LC classrooms. It has a yard, a tiled veranda, and large brown doors.",
+    "timestamp": "2025-11-21T09:10:00.000Z"
+  },
+  {
+    "id": "loc_1732182000000",
+    "latitude": 6.012663,
+    "longitude": 10.252953,
+    "type": "landmark",
+    "description": "Also known as Block 17, the CCAST Block is reached by passing the School Restaurant and descending the road to the left. As you go down, you will immediately recognize the CCAST field on your left. The field is spacious and features a prominent statue shaped like the map of Cameroon, as well as a grandstand area with multiple steps for seating during events. On your right, you will see small fenced sports courts, including basketball and possibly volleyball courts. Continue descending to the end, then turn left. From there, the long classroom building becomes visible, extending in a straight line. This is the CCAST Block, containing 17 halls, with Hall 1 at the beginning of the block and Hall 17 at the far end.",
+    "timestamp": "2025-11-21T09:20:00.000Z"
+  },
+  {
+    "name": "Ayaba Hotel",
+    "latitude": 5.9638,
+    "longitude": 10.1515,
+    "type": "Hotel",
+    "description": "Popular hotel and conference center in Bamenda"
+  },
+  {
+    "name": "Commercial Avenue",
+    "latitude": 5.9630,
+    "longitude": 10.1520,
+    "type": "Road",
+    "description": "Main business street with shops, banks, and offices"
+  },
+  {
+    "name": "Bamenda Main Market",
+    "latitude": 5.9655,
+    "longitude": 10.1542,
+    "type": "Market",
+    "description": "Largest market in Bamenda, busy with traders and goods"
+  },
+  {
+    "name": "Dreamland Restaurant",
+    "latitude": 5.9625,
+    "longitude": 10.1508,
+    "type": "Restaurant",
+    "description": "Well-known spot for local dishes"
+  },
+  {
+    "name": "Blue Pearl Lounge",
+    "latitude": 5.9620,
+    "longitude": 10.1512,
+    "type": "Lounge",
+    "description": "Popular nightlife lounge in Bamenda"
+  },
+  {
+    "name": "Bamenda Regional Hospital",
+    "latitude": 5.9639,
+    "longitude": 10.1580,
+    "type": "Hospital",
+    "description": "Major healthcare facility serving Bamenda"
+  },
+  {
+    "name": "Nkwen Baptist Church",
+    "latitude": 5.9762,
+    "longitude": 10.1670,
+    "type": "Church",
+    "description": "Prominent Baptist church in Nkwen"
+  },
+  {
+    "name": "Presbyterian Secondary School",
+    "latitude": 5.9642,
+    "longitude": 10.1498,
+    "type": "School",
+    "description": "Major secondary school in Bamenda"
+  },
+  {
+    "name": "Bamenda Motor Park",
+    "latitude": 5.9650,
+    "longitude": 10.1540,
+    "type": "Transport",
+    "description": "Central motor park for buses and taxis"
+  },
+  {
+    "name": "Up Station Hill",
+    "latitude": 5.9614,
+    "longitude": 10.1517,
+    "type": "Landmark",
+    "description": "Elevated area overlooking Bamenda"
+  },
+  {
+    "name": "Bamenda Airport",
+    "latitude": 6.0390,
+    "longitude": 10.1220,
+    "type": "Transport",
+    "description": "Regional airport serving Bamenda"
+  },
+  {
+    "name": "Catholic Cathedral Mankon",
+    "latitude": 5.9605,
+    "longitude": 10.1475,
+    "type": "Church",
+    "description": "Main Catholic cathedral in Bamenda"
+  },
+  {
+    "name": "Government Technical High School",
+    "latitude": 5.9620,
+    "longitude": 10.1505,
+    "type": "School",
+    "description": "Major technical high school in Bamenda"
+  },
+  {
+    "name": "Bamenda City Chemist",
+    "latitude": 5.9628,
+    "longitude": 10.1525,
+    "type": "Pharmacy",
+    "description": "Well-known pharmacy on Commercial Avenue"
+  },
+  {
+    "name": "Finance Junction",
+    "latitude": 5.9622,
+    "longitude": 10.1510,
+    "type": "Junction",
+    "description": "Key traffic junction near banks"
+  },
+  {
+    "name": "Bamenda Council Hall",
+    "latitude": 5.9610,
+    "longitude": 10.1500,
+    "type": "Government",
+    "description": "City council offices"
+  },
+  {
+    "name": "Governor’s Office",
+    "latitude": 5.9608,
+    "longitude": 10.1495,
+    "type": "Government",
+    "description": "Northwest Region Governor’s office"
+  },
+  {
+    "name": "Old Town Food Market",
+    "latitude": 5.9585,
+    "longitude": 10.1450,
+    "type": "Market",
+    "description": "Traditional food market in Old Town"
+  },
+  {
+    "name": "Bamenda Post Office",
+    "latitude": 5.9625,
+    "longitude": 10.1512,
+    "type": "Government",
+    "description": "Central post office"
+  },
+  {
+    "name": "Police Headquarters",
+    "latitude": 5.9618,
+    "longitude": 10.1508,
+    "type": "Government",
+    "description": "Regional police headquarters"
+  },
+  {
+    "name": "Bamenda Military Camp",
+    "latitude": 5.9600,
+    "longitude": 10.1480,
+    "type": "Military",
+    "description": "Main military camp in Bamenda"
+  },
+  {
+    "name": "Bamenda Stadium",
+    "latitude": 5.9645,
+    "longitude": 10.1535,
+    "type": "Sports",
+    "description": "Main football stadium"
+  },
+  {
+    "name": "Bamenda Central Prison",
+    "latitude": 5.9590,
+    "longitude": 10.1470,
+    "type": "Government",
+    "description": "Main prison facility"
+  },
+  {
+    "name": "Regional Health Delegation",
+    "latitude": 5.9632,
+    "longitude": 10.1513,
+    "type": "Government",
+    "description": "Regional health offices"
+  },
+  {
+    "name": "Regional Agriculture Delegation",
+    "latitude": 5.9636,
+    "longitude": 10.1518,
+    "type": "Government",
+    "description": "Regional agriculture offices"
+  },
+  {
+    "name": "Regional Transport Delegation",
+    "latitude": 5.9640,
+    "longitude": 10.1522,
+    "type": "Government",
+    "description": "Regional transport offices"
+  },
+  {
+    "name": "Regional Finance Delegation",
+    "latitude": 5.9644,
+    "longitude": 10.1526,
+    "type": "Government",
+    "description": "Regional finance offices"
+  },
+  {
+    "name": "Regional Justice Delegation",
+    "latitude": 5.9648,
+    "longitude": 10.1530,
+    "type": "Government",
+    "description": "Regional justice offices"
+  },
+  {
+    "name": "Regional Forestry Delegation",
+    "latitude": 5.9652,
+    "longitude": 10.1534,
+    "type": "Government",
+    "description": "Regional forestry offices"
+  },
+  {
+    "name": "Regional Tourism Delegation",
+    "latitude": 5.9656,
+    "longitude": 10.1538,
+    "type": "Government",
+    "description": "Regional tourism offices"
+  },
+  {
+    "name": "Regional Youth Affairs Delegation",
+    "latitude": 5.9660,
+    "longitude": 10.1542,
+    "type": "Government",
+    "description": "Regional youth affairs offices"
+  },
+  {
+    "name": "Regional Sports Delegation",
+    "latitude": 5.9664,
+    "longitude": 10.1546,
+    "type": "Government",
+    "description": "Regional sports offices"
+  },
+  {
+    "name": "Regional Women’s Affairs Delegation",
+    "latitude": 5.9668,
+    "longitude": 10.1550,
+    "type": "Government",
+    "description": "Regional women’s affairs offices"
+  },
+  {
+    "name": "Regional Social Affairs Delegation",
+    "latitude": 5.9672,
+    "longitude": 10.1554,
+    "type": "Government",
+    "description": "Regional social affairs offices"
+  },
+  {
+    "name": "Regional Labor Delegation",
+    "latitude": 5.9676,
+    "longitude": 10.1558,
+    "type": "Government",
+    "description": "Regional labor offices"
+  },
+  {
+    "name": "Regional Commerce Delegation",
+    "latitude": 5.9680,
+    "longitude": 10.1562,
+    "type": "Government",
+    "description": "Regional commerce offices"
+  },
+  {
+    "name": "Regional Industry Delegation",
+    "latitude": 5.9684,
+    "longitude": 10.1566,
+    "type": "Government",
+    "description": "Regional industry offices"
+  },
+  {
+    "name": "Regional Mines Delegation",
+    "latitude": 5.9688,
+    "longitude": 10.1570,
+    "type": "Government",
+    "description": "Regional mines offices"
+  },
+  {
+    "name": "Regional Energy Delegation",
+    "latitude": 5.9692,
+    "longitude": 10.1574,
+    "type": "Government",
+    "description": "Regional energy offices"
+  },
+  {
+    "name": "Regional Water Resources Delegation",
+    "latitude": 5.9696,
+    "longitude": 10.1578,
+    "type": "Government",
+    "description": "Regional water resources offices"
+  },
+  {
+    "name": "Regional Environment Delegation",
+    "latitude": 5.9700,
+    "longitude": 10.1582,
+    "type": "Government",
+    "description": "Regional environment offices"
+  },
+  {
+    "name": "Regional Science & Tech Delegation",
+    "latitude": 5.9704,
+    "longitude": 10.1586,
+    "type": "Government",
+    "description": "Regional science & technology offices"
+  },
+  {
+    "name": "Regional Higher Education Delegation",
+    "latitude": 5.9708,
+    "longitude": 10.1590,
+    "type": "Government",
+    "description": "Regional higher education offices"
+  },
+  {
+    "name": "Regional Basic Education Delegation",
+    "latitude": 5.9712,
+    "longitude": 10.1594,
+    "type": "Government",
+    "description": "Regional basic education offices"
+  },
+  {
+    "name": "Regional Secondary Education Delegation",
+    "latitude": 5.9716,
+    "longitude": 10.1598,
+    "type": "Government",
+    "description": "Regional secondary education offices"
+  },
+  {
+    "name": "Regional Public Works Delegation",
+    "latitude": 5.9720,
+    "longitude": 10.1602,
+    "type": "Government",
+    "description": "Regional public works offices"
+  },
+  {
+    "name": "Regional Housing Delegation",
+    "latitude": 5.9724,
+    "longitude": 10.1606,
+    "type": "Government",
+    "description": "Regional housing offices"
+  },
+  {
+    "name": "Regional Planning Delegation",
+    "latitude": 5.9728,
+    "longitude": 10.1610,
+    "type": "Government",
+    "description": "Regional planning offices"
+  },
+  {
+    "name": "Regional Culture Delegation",
+    "latitude": 5.9732,
+    "longitude": 10.1614,
+    "type": "Government",
+    "description": "Regional culture offices"
+  },
+  {
+    "name": "Regional Transport Hub",
+    "latitude": 5.9736,
+    "longitude": 10.1618,
+    "type": "Transport",
+    "description": "Major transport hub in Bamenda"
+  },
+  {
+    "name": "Regional Library",
+    "latitude": 5.9740,
+    "longitude": 10.1622,
+    "type": "Library",
+    "description": "Main public library in Bamenda"
+  },
+  {
+    "name": "Regional Museum",
+    "latitude": 5.9744,
+    "longitude": 10.1626,
+    "type": "Museum",
+    "description": "Museum showcasing Northwest culture"
+  },
+  {
+    "name": "Regional Arts Center",
+    "latitude": 5.9748,
+    "longitude": 10.1630,
+    "type": "Arts",
+    "description": "Center for arts and performances"
+  },
+  {
+    "name": "Regional Conference Hall",
+    "latitude": 5.9752,
+    "longitude": 10.1634,
+    "type": "Conference",
+    "description": "Main conference hall in Bamenda"
+  },
+  {
+    "name": "Regional Hotel Complex",
+    "latitude": 5.9756,
+    "longitude": 10.1638,
+    "type": "Hotel",
+    "description": "Large hotel complex for visitors"
+  },
+  {
+    "name": "Regional Guest House",
+    "latitude": 5.9760,
+    "longitude": 10.1642,
+    "type": "Guest House",
+    "description": "Guest house for travelers"
+  },
+  {
+    "name": "Regional Hostel",
+    "latitude": 5.9764,
+    "longitude": 10.1646,
+    "type": "Hostel",
+    "description": "Hostel accommodation for students"
+  },
+  {
+    "name": "Regional Provision Store",
+    "latitude": 5.9768,
+    "longitude": 10.1650,
+    "type": "Store",
+    "description": "Popular provision store in Bamenda"
+  },
+  {
+    "name": "Regional Restaurant Complex",
+    "latitude": 5.9772,
+    "longitude": 10.1654,
+    "type": "Restaurant",
+    "description": "Cluster of restaurants serving local dishes"
+  },
+  {
+    "name": "City Restaurant",
+    "latitude": 5.9776,
+    "longitude": 10.1658,
+    "type": "Restaurant",
+    "description": "Popular restaurant serving local and continental dishes"
+  },
+  { "name": "Ayaba Hotel", "quarter": "Commercial Avenue, Mankon", "latitude": 5.9638, "longitude": 10.1515 },
+  { "name": "Commercial Avenue", "quarter": "Mankon", "latitude": 5.9630, "longitude": 10.1520 },
+  { "name": "Bamenda Main Market", "quarter": "Mankon", "latitude": 5.9655, "longitude": 10.1542 },
+  { "name": "Dreamland Restaurant", "quarter": "Commercial Avenue, Mankon", "latitude": 5.9625, "longitude": 10.1508 },
+  { "name": "Blue Pearl Lounge", "quarter": "Commercial Avenue, Mankon", "latitude": 5.9620, "longitude": 10.1512 },
+  { "name": "Bamenda Regional Hospital", "quarter": "Mankon", "latitude": 5.9639, "longitude": 10.1580 },
+  { "name": "Nkwen Baptist Church", "quarter": "Nkwen", "latitude": 5.9762, "longitude": 10.1670 },
+  { "name": "Presbyterian Secondary School", "quarter": "Mankon", "latitude": 5.9642, "longitude": 10.1498 },
+  { "name": "Bamenda Motor Park", "quarter": "Mankon", "latitude": 5.9650, "longitude": 10.1540 },
+  { "name": "Up Station Hill", "quarter": "Up Station", "latitude": 5.9614, "longitude": 10.1517 },
+  { "name": "Bamenda Airport", "quarter": "Bafut outskirts", "latitude": 6.0390, "longitude": 10.1220 },
+  { "name": "Catholic Cathedral Mankon", "quarter": "Mankon", "latitude": 5.9605, "longitude": 10.1475 },
+  { "name": "Government Technical High School", "quarter": "Mankon", "latitude": 5.9620, "longitude": 10.1505 },
+  { "name": "Bamenda City Chemist", "quarter": "Commercial Avenue, Mankon", "latitude": 5.9628, "longitude": 10.1525 },
+  { "name": "Finance Junction", "quarter": "Commercial Avenue, Mankon", "latitude": 5.9622, "longitude": 10.1510 },
+  { "name": "Bamenda Council Hall", "quarter": "Mankon", "latitude": 5.9610, "longitude": 10.1500 },
+  { "name": "Governor’s Office", "quarter": "Up Station", "latitude": 5.9608, "longitude": 10.1495 },
+  { "name": "Old Town Food Market", "quarter": "Old Town, Mankon", "latitude": 5.9585, "longitude": 10.1450 },
+  { "name": "Bamenda Post Office", "quarter": "Commercial Avenue, Mankon", "latitude": 5.9625, "longitude": 10.1512 },
+  { "name": "Police Headquarters", "quarter": "Mankon", "latitude": 5.9618, "longitude": 10.1508 },
+
+  { "name": "Bamenda Military Camp", "quarter": "Mankon", "latitude": 5.9600, "longitude": 10.1480 },
+  { "name": "Bamenda Stadium", "quarter": "Mankon", "latitude": 5.9645, "longitude": 10.1535 },
+  { "name": "Bamenda Central Prison", "quarter": "Mankon", "latitude": 5.9590, "longitude": 10.1470 },
+  { "name": "Regional Health Delegation", "quarter": "Up Station", "latitude": 5.9632, "longitude": 10.1513 },
+  { "name": "Regional Agriculture Delegation", "quarter": "Up Station", "latitude": 5.9636, "longitude": 10.1518 },
+  { "name": "Regional Transport Delegation", "quarter": "Up Station", "latitude": 5.9640, "longitude": 10.1522 },
+  { "name": "Regional Finance Delegation", "quarter": "Up Station", "latitude": 5.9644, "longitude": 10.1526 },
+  { "name": "Regional Justice Delegation", "quarter": "Up Station", "latitude": 5.9648, "longitude": 10.1530 },
+  { "name": "Regional Forestry Delegation", "quarter": "Up Station", "latitude": 5.9652, "longitude": 10.1534 },
+  { "name": "Regional Tourism Delegation", "quarter": "Up Station", "latitude": 5.9656, "longitude": 10.1538 },
+  { "name": "Regional Youth Affairs Delegation", "quarter": "Up Station", "latitude": 5.9660, "longitude": 10.1542 },
+  { "name": "Regional Sports Delegation", "quarter": "Up Station", "latitude": 5.9664, "longitude": 10.1546 },
+  { "name": "Regional Women’s Affairs Delegation", "quarter": "Up Station", "latitude": 5.9668, "longitude": 10.1550 },
+  { "name": "Regional Social Affairs Delegation", "quarter": "Up Station", "latitude": 5.9672, "longitude": 10.1554 },
+  { "name": "Regional Labor Delegation", "quarter": "Up Station", "latitude": 5.9676, "longitude": 10.1558 },
+  { "name": "Regional Commerce Delegation", "quarter": "Up Station", "latitude": 5.9680, "longitude": 10.1562 },
+  { "name": "Regional Industry Delegation", "quarter": "Up Station", "latitude": 5.9684, "longitude": 10.1566 },
+  { "name": "Regional Mines Delegation", "quarter": "Up Station", "latitude": 5.9688, "longitude": 10.1570 },
+  { "name": "Regional Energy Delegation", "quarter": "Up Station", "latitude": 5.9692, "longitude": 10.1574 },
+  { "name": "Regional Water Resources Delegation", "quarter": "Up Station", "latitude": 5.9696, "longitude": 10.1578 },
+
+  { "name": "Regional Environment Delegation", "quarter": "Up Station", "latitude": 5.9700, "longitude": 10.1582 },
+  { "name": "Regional Science & Tech Delegation", "quarter": "Up Station", "latitude": 5.9704, "longitude": 10.1586 },
+  { "name": "Regional Higher Education Delegation", "quarter": "Up Station", "latitude": 5.9708, "longitude": 10.1590 },
+  { "name": "Regional Basic Education Delegation", "quarter": "Up Station", "latitude": 5.9712, "longitude": 10.1594 },
+  { "name": "Regional Secondary Education Delegation", "quarter": "Up Station", "latitude": 5.9716, "longitude": 10.1598 },
+  { "name": "Regional Public Works Delegation", "quarter": "Up Station", "latitude": 5.9720, "longitude": 10.1602 },
+  { "name": "Regional Housing Delegation", "quarter": "Up Station", "latitude": 5.9724, "longitude": 10.1606 },
+  { "name": "Regional Planning Delegation", "quarter": "Up Station", "latitude": 5.9728, "longitude": 10.1610 },
+  { "name": "Regional Culture Delegation", "quarter": "Up Station", "latitude": 5.9732, "longitude": 10.1614 },
+  { "name": "Regional Transport Hub", "quarter": "Up Station", "latitude": 5.9736, "longitude": 10.1618 },
+  { "name": "Regional Library", "quarter": "Up Station", "latitude": 5.9740, "longitude": 10.1622 },
+  { "name": "Regional Museum", "quarter": "Up Station", "latitude": 5.9744, "longitude": 10.1626 },
+  { "name": "Regional Arts Center", "quarter": "Up Station", "latitude": 5.9748, "longitude": 10.1630 },
+
+  {
+    "name": "Njie Forbi Snack Bar",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9639,
+    "longitude": 10.1531,
+    "description": "Iconic snack bar and lounge known for quick bites and evening drinks."
+  },
+  {
+    "name": "Crumz Bakery",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9646,
+    "longitude": 10.1519,
+    "description": "Popular bakery and café serving pastries, bread, and coffee."
+  },
+  {
+    "name": "Brasseries Lounge Commercial",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9632,
+    "longitude": 10.1524,
+    "description": "Beer lounge and grill spot associated with Brasseries brands."
+  },
+  {
+    "name": "Pres Café",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9650,
+    "longitude": 10.1507,
+    "description": "Casual café with light meals, snacks, and refreshments."
+  },
+  {
+    "name": "RitzKay Restaurant",
+    "quarter": "City Center, Mankon",
+    "latitude": 5.9661,
+    "longitude": 10.1542,
+    "description": "Modern restaurant offering local and continental cuisine."
+  },
+  {
+    "name": "New Century Restaurant",
+    "quarter": "City Center, Mankon",
+    "latitude": 5.9656,
+    "longitude": 10.1536,
+    "description": "Contemporary dining with a diverse menu and comfortable seating."
+  },
+  {
+    "name": "Dreamland Snack Bar",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9628,
+    "longitude": 10.1511,
+    "description": "Lively snack bar known for fast service and evening vibes."
+  },
+  {
+    "name": "Lenny’s Cuisine",
+    "quarter": "Nkwen",
+    "latitude": 5.9749,
+    "longitude": 10.1667,
+    "description": "Restaurant serving Cameroonian classics with a modern touch."
+  },
+  {
+    "name": "Chenjo’s Grill",
+    "quarter": "Nkwen",
+    "latitude": 5.9755,
+    "longitude": 10.1659,
+    "description": "Grill house specializing in roasted meats and local sides."
+  },
+  {
+    "name": "Downtown Restaurant",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9637,
+    "longitude": 10.1528,
+    "description": "Central spot offering quick meals and business‑friendly seating."
+  },
+  {
+    "name": "Mami Effa Kitchen",
+    "quarter": "Old Town, Mankon",
+    "latitude": 5.9589,
+    "longitude": 10.1453,
+    "description": "Home‑style kitchen serving traditional Cameroonian dishes."
+  },
+  {
+    "name": "Bamenda Brasserie Spot",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9622,
+    "longitude": 10.1502,
+    "description": "Outdoor beer spot with grills and casual hangout atmosphere."
+  },
+  {
+    "name": "Café de l’Ouest",
+    "quarter": "City Center, Mankon",
+    "latitude": 5.9634,
+    "longitude": 10.1494,
+    "description": "Coffee shop with light meals and pastries."
+  },
+  {
+    "name": "Njangi House Eatery",
+    "quarter": "Nkwen",
+    "latitude": 5.9758,
+    "longitude": 10.1673,
+    "description": "Casual eatery and lounge for groups and meetups."
+  },
+  {
+    "name": "Savannah Restaurant",
+    "quarter": "Nkwen",
+    "latitude": 5.9742,
+    "longitude": 10.1651,
+    "description": "Family‑friendly restaurant with local and continental options."
+  },
+  {
+    "name": "Hilltop Grill",
+    "quarter": "Up Station",
+    "latitude": 5.9698,
+    "longitude": 10.1579,
+    "description": "Grill and view spot overlooking the city."
+  },
+  {
+    "name": "Mbengis Kitchen",
+    "quarter": "Nkwen",
+    "latitude": 5.9766,
+    "longitude": 10.1663,
+    "description": "Comfort food kitchen serving hearty local meals."
+  },
+  {
+    "name": "Café Royale",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9631,
+    "longitude": 10.1515,
+    "description": "Upscale café with desserts, coffee, and light bites."
+  },
+  {
+    "name": "Njie’s Corner",
+    "quarter": "Nkwen",
+    "latitude": 5.9752,
+    "longitude": 10.1665,
+    "description": "Neighborhood hangout for snacks and drinks."
+  },
+  {
+    "name": "Café Aroma",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9648,
+    "longitude": 10.1509,
+    "description": "Bakery‑café known for fresh coffee and pastries."
+  },
+
+  {
+    "name": "Mondial Hotel",
+    "quarter": "City Center, Mankon",
+    "latitude": 5.9657,
+    "longitude": 10.1522,
+    "description": "Mid‑range hotel with comfortable rooms near the city center."
+  },
+  {
+    "name": "Azam Hotel",
+    "quarter": "City Center, Mankon",
+    "latitude": 5.9627,
+    "longitude": 10.1499,
+    "description": "Hotel with standard amenities and easy access to Commercial Avenue."
+  },
+  {
+    "name": "Bamenda Highlands Hotel",
+    "quarter": "Nkwen",
+    "latitude": 5.9830,
+    "longitude": 10.1707,
+    "description": "Hotel offering elevated views and event space."
+  },
+  {
+    "name": "Savoy Hotel",
+    "quarter": "Nkwen",
+    "latitude": 5.9782,
+    "longitude": 10.1661,
+    "description": "Business‑friendly hotel with on‑site dining."
+  },
+  {
+    "name": "Bamenda Palace Hotel",
+    "quarter": "Mankon (near Royal Palace)",
+    "latitude": 5.9606,
+    "longitude": 10.1478,
+    "description": "Hotel located close to cultural sites around the palace."
+  },
+  {
+    "name": "Njie’s Guest House",
+    "quarter": "Nkwen",
+    "latitude": 5.9769,
+    "longitude": 10.1658,
+    "description": "Budget‑friendly guest house with basic lodging."
+  },
+  {
+    "name": "Crumz Suites",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9645,
+    "longitude": 10.1517,
+    "description": "Boutique suites linked to the Crumz brand."
+  },
+  {
+    "name": "Brasseries Inn",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9633,
+    "longitude": 10.1506,
+    "description": "Inn with bar and grill, popular for evening relax."
+  },
+  {
+    "name": "Greenfield Hotel",
+    "quarter": "Nkwen",
+    "latitude": 5.9803,
+    "longitude": 10.1689,
+    "description": "Hotel in Nkwen with simple, comfortable rooms."
+  },
+  {
+    "name": "Sunshine Guest House",
+    "quarter": "Nkwen",
+    "latitude": 5.9784,
+    "longitude": 10.1666,
+    "description": "Guest house offering affordable lodging close to the main road."
+  },
+  {
+    "name": "City Guest House",
+    "quarter": "Nkwen",
+    "latitude": 5.9840,
+    "longitude": 10.1722,
+    "description": "Guest house near central Nkwen with convenient access."
+  },
+  {
+    "name": "Highland Hotel",
+    "quarter": "Nkwen",
+    "latitude": 5.9824,
+    "longitude": 10.1706,
+    "description": "Hotel with panoramic views and event facilities."
+  },
+  {
+    "name": "Bamenda Comfort Inn",
+    "quarter": "Nkwen",
+    "latitude": 5.9771,
+    "longitude": 10.1657,
+    "description": "Comfortable budget stay with essential amenities."
+  },
+  {
+    "name": "Royal Palace Lodge",
+    "quarter": "Mankon (Palace area)",
+    "latitude": 5.9611,
+    "longitude": 10.1469,
+    "description": "Lodge situated near the Mankon Royal Palace."
+  },
+  {
+    "name": "Njie Forbi Guest House",
+    "quarter": "Nkwen",
+    "latitude": 5.9767,
+    "longitude": 10.1669,
+    "description": "Guest house associated with the Njie Forbi brand."
+  },
+  {
+    "name": "Savannah Suites",
+    "quarter": "Nkwen",
+    "latitude": 5.9740,
+    "longitude": 10.1657,
+    "description": "Suite‑style lodging with modern finishes."
+  },
+  {
+    "name": "Bamenda Plaza Hotel",
+    "quarter": "Commercial Avenue, Mankon",
+    "latitude": 5.9636,
+    "longitude": 10.1513,
+    "description": "City‑center hotel within walking distance of shops and offices."
+  },
+  {
+    "name": "Njangi House Lodge",
+    "quarter": "Nkwen",
+    "latitude": 5.9754,
+    "longitude": 10.1661,
+    "description": "Casual lodge connected to the Njangi House venue."
+  },
+  {
+    "name": "Eco Park Guest House",
+    "quarter": "Nkwen (near Eco Park)",
+    "latitude": 5.9815,
+    "longitude": 10.1697,
+    "description": "Guest house near Eco Park with quiet surroundings."
+  },
+  {
+    "name": "Blue Pearl Hotel Bamenda",
+    "quarter": "Nkwen",
+    "latitude": 5.9763,
+    "longitude": 10.1648,
+    "description": "Hotel offering rooms, conference space, and on‑site dining."
+  },
+  {
+    "name": "University of Bamenda (UBa)",
+    "quarter": "Bambili",
+    "latitude": 5.9630,
+    "longitude": 10.1590,
+    "description": "Public university offering Arts, Sciences, Law, Medicine, Engineering, Agriculture, Education, Economics, ICT."
+  },
+  {
+    "name": "Catholic University of Cameroon (CATUC)",
+    "quarter": "Bamenda town",
+    "latitude": 5.9635,
+    "longitude": 10.1520,
+    "description": "Faith-based university offering Philosophy, Theology, Law, Business, Health Sciences."
+  },
+  {
+    "name": "Shalom University Institute",
+    "quarter": "Mile 1 Up Station",
+    "latitude": 5.9615,
+    "longitude": 10.1490,
+    "description": "Christian university offering Theology, Education, Social Sciences."
+  },
+  {
+    "name": "Cameroon Christian University Institute (CCUI)",
+    "quarter": "Bamenda urban",
+    "latitude": 5.9625,
+    "longitude": 10.1505,
+    "description": "Faith-based university offering Theology, Education, Social Sciences."
+  },
+  {
+    "name": "St. Louis University Institute Bamenda (SLUIB)",
+    "quarter": "Tubah/Bambili axis",
+    "latitude": 5.9640,
+    "longitude": 10.1580,
+    "description": "Private university offering Business, Management, Health Sciences, ICT, Education, Social Sciences."
+  },
+  {
+    "name": "FLENB / Fomic Polytechnic University Institute Bamenda",
+    "quarter": "Bamenda urban",
+    "latitude": 5.9638,
+    "longitude": 10.1575,
+    "description": "Private polytechnic offering Business, Accountancy, ICT, Engineering, Health Sciences, Education."
+  },
+  {
+    "name": "Central University Institute Bamenda (CUIBa)",
+    "quarter": "Bamenda",
+    "latitude": 5.9650,
+    "longitude": 10.1540,
+    "description": "Private university offering Business, Management, ICT, Social Sciences."
+  },
+  {
+    "name": "International University Bamenda",
+    "quarter": "Bamenda",
+    "latitude": 5.9660,
+    "longitude": 10.1560,
+    "description": "Private university offering Business Administration, International Relations, ICT."
+  },
+  {
+    "name": "National Polytechnic Universy InstituteBamenda (NPB)",
+    "quarter": "Bamenda",
+    "latitude": 5.9670,
+    "longitude": 10.1550,
+    "description": "Polytechnic offering Engineering, ICT, Business, Health Sciences."
+  },
+  {
+  "elements": [
+    {
+      "type": "node",
+      "id": 929890946,
+      "lat": 6.0044479,
+      "lon": 10.2557186,
+      "tags": {
+        "name": "3 Corners Bambili"
+      }
+    },
+    {
+      "type": "node",
+      "id": 1744470346,
+      "lat": 6.0043318,
+      "lon": 10.2573289,
+      "tags": {
+        "GNS:dsg_code": "PPL",
+        "GNS:dsg_string": "populated place",
+        "GNS:id": "-3145934",
+        "name": "Bambili",
+        "place": "village",
+        "source": "GNS"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4407921066,
+      "lat": 6.0079895,
+      "lon": 10.2603433,
+      "tags": {
+        "amenity": "place_of_worship",
+        "denomination": "baptist",
+        "name": "Bible Baptist church",
+        "religion": "christian"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4810543222,
+      "lat": 6.0036238,
+      "lon": 10.2556545,
+      "tags": {
+        "amenity": "bar",
+        "name": "Pick Py Bar",
+        "name:en": "Pick Py Bar"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5713142612,
+      "lat": 6.0128443,
+      "lon": 10.2564845,
+      "tags": {
+        "amenity": "restaurant",
+        "name": "Restaurant Universitaire"
+      }
+    },
+    {
+      "type": "way",
+      "id": 306799490,
+      "bounds": {
+        "minlat": 6.0099984,
+        "minlon": 10.260112,
+        "maxlat": 6.0102883,
+        "maxlon": 10.2603736
+      },
+      "nodes": [
+        3118063865,
+        3118063880,
+        3118063883,
+        3118063888,
+        3118063878,
+        3118063872,
+        3118063868,
+        3118063861,
+        3118063864,
+        3118063859,
+        3118063865
+      ],
+      "geometry": [
+        {
+          "lat": 6.0100761,
+          "lon": 10.260112
+        },
+        {
+          "lat": 6.010209,
+          "lon": 10.2602406
+        },
+        {
+          "lat": 6.0102413,
+          "lon": 10.2602068
+        },
+        {
+          "lat": 6.0102883,
+          "lon": 10.2602523
+        },
+        {
+          "lat": 6.0101722,
+          "lon": 10.2603736
+        },
+        {
+          "lat": 6.0101176,
+          "lon": 10.2603207
+        },
+        {
+          "lat": 6.0100937,
+          "lon": 10.2603457
+        },
+        {
+          "lat": 6.0100252,
+          "lon": 10.2602794
+        },
+        {
+          "lat": 6.0100551,
+          "lon": 10.2602481
+        },
+        {
+          "lat": 6.0099984,
+          "lon": 10.2601932
+        },
+        {
+          "lat": 6.0100761,
+          "lon": 10.260112
+        }
+      ],
+      "tags": {
+        "amenity": "place_of_worship",
+        "building": "yes",
+        "denomination": "presbyterian",
+        "name": "Our lady of Fatima presbytery",
+        "religion": "christian"
+      }
+    },
+    {
+      "type": "way",
+      "id": 306799497,
+      "bounds": {
+        "minlat": 6.0094493,
+        "minlon": 10.2596974,
+        "maxlat": 6.0098896,
+        "maxlon": 10.2601319
+      },
+      "nodes": [
+        3118063839,
+        3118063850,
+        3118063845,
+        3118063851,
+        3118063841,
+        3118063837,
+        3118063623,
+        3118063597,
+        3118063625,
+        3118063612,
+        3118063833,
+        3118063836,
+        3118063839
+      ],
+      "geometry": [
+        {
+          "lat": 6.0097586,
+          "lon": 10.2596975
+        },
+        {
+          "lat": 6.0098889,
+          "lon": 10.2598249
+        },
+        {
+          "lat": 6.0098313,
+          "lon": 10.2598845
+        },
+        {
+          "lat": 6.0098896,
+          "lon": 10.2599415
+        },
+        {
+          "lat": 6.0097859,
+          "lon": 10.2600487
+        },
+        {
+          "lat": 6.0097216,
+          "lon": 10.2599859
+        },
+        {
+          "lat": 6.0095803,
+          "lon": 10.2601319
+        },
+        {
+          "lat": 6.0094493,
+          "lon": 10.2600037
+        },
+        {
+          "lat": 6.0095875,
+          "lon": 10.2598608
+        },
+        {
+          "lat": 6.0095326,
+          "lon": 10.259807
+        },
+        {
+          "lat": 6.0096386,
+          "lon": 10.2596974
+        },
+        {
+          "lat": 6.0097003,
+          "lon": 10.2597578
+        },
+        {
+          "lat": 6.0097586,
+          "lon": 10.2596975
+        }
+      ],
+      "tags": {
+        "amenity": "place_of_worship",
+        "building": "yes",
+        "denomination": "catholic",
+        "name": "Catholic Church Bambili",
+        "religion": "christian"
+      }
+    },
+    {
+      "type": "way",
+      "id": 306799622,
+      "bounds": {
+        "minlat": 6.0110366,
+        "minlon": 10.257862,
+        "maxlat": 6.0113075,
+        "maxlon": 10.258104
+      },
+      "nodes": [
+        3118063999,
+        3118064004,
+        3118064003,
+        3118064007,
+        3118064005,
+        3118064001,
+        3118063998,
+        3118063989,
+        3118063999
+      ],
+      "geometry": [
+        {
+          "lat": 6.0111196,
+          "lon": 10.257862
+        },
+        {
+          "lat": 6.0112793,
+          "lon": 10.2579923
+        },
+        {
+          "lat": 6.0112672,
+          "lon": 10.2580074
+        },
+        {
+          "lat": 6.0113075,
+          "lon": 10.2580403
+        },
+        {
+          "lat": 6.0112722,
+          "lon": 10.258084
+        },
+        {
+          "lat": 6.0112428,
+          "lon": 10.25806
+        },
+        {
+          "lat": 6.0112073,
+          "lon": 10.258104
+        },
+        {
+          "lat": 6.0110366,
+          "lon": 10.2579648
+        },
+        {
+          "lat": 6.0111196,
+          "lon": 10.257862
+        }
+      ],
+      "tags": {
+        "amenity": "bank",
+        "building": "yes",
+        "name": "NFC Bank"
+      }
+    },
+    {
+      "type": "way",
+      "id": 306999675,
+      "bounds": {
+        "minlat": 6.014566,
+        "minlon": 10.2544498,
+        "maxlat": 6.0149594,
+        "maxlon": 10.2548675
+      },
+      "nodes": [
+        3120424082,
+        3120424063,
+        3120424055,
+        3120424044,
+        3120424022,
+        3120424047,
+        3120424082
+      ],
+      "geometry": [
+        {
+          "lat": 6.0149594,
+          "lon": 10.2545721
+        },
+        {
+          "lat": 6.0148391,
+          "lon": 10.2547781
+        },
+        {
+          "lat": 6.0147991,
+          "lon": 10.2547545
+        },
+        {
+          "lat": 6.0147332,
+          "lon": 10.2548675
+        },
+        {
+          "lat": 6.014566,
+          "lon": 10.2547688
+        },
+        {
+          "lat": 6.0147522,
+          "lon": 10.2544498
+        },
+        {
+          "lat": 6.0149594,
+          "lon": 10.2545721
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "guest_house": "student_accomodation",
+        "internet_access": "no",
+        "name": "Elegance Student Hostel",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "type": "way",
+      "id": 401792576,
+      "bounds": {
+        "minlat": 6.0103192,
+        "minlon": 10.2585309,
+        "maxlat": 6.0108024,
+        "maxlon": 10.259011
+      },
+      "nodes": [
+        4041954726,
+        8221120330,
+        4041954727,
+        8221120327,
+        4041954728,
+        4041954729,
+        4041954731,
+        4041954726
+      ],
+      "geometry": [
+        {
+          "lat": 6.0105736,
+          "lon": 10.2585309
+        },
+        {
+          "lat": 6.0107809,
+          "lon": 10.258661
+        },
+        {
+          "lat": 6.0108024,
+          "lon": 10.2586745
+        },
+        {
+          "lat": 6.0107342,
+          "lon": 10.2588185
+        },
+        {
+          "lat": 6.0105632,
+          "lon": 10.259011
+        },
+        {
+          "lat": 6.0103192,
+          "lon": 10.2588371
+        },
+        {
+          "lat": 6.0103676,
+          "lon": 10.2587907
+        },
+        {
+          "lat": 6.0105736,
+          "lon": 10.2585309
+        }
+      ],
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "type": "way",
+      "id": 401878863,
+      "bounds": {
+        "minlat": 6.0095873,
+        "minlon": 10.2539388,
+        "maxlat": 6.015225,
+        "maxlon": 10.2609362
+      },
+      "nodes": [
+        3296636551,
+        3296636537,
+        3296636528,
+        4042871659,
+        4042871660,
+        4042871661,
+        4042871662,
+        4042871663,
+        4042871664,
+        4042871665,
+        4042871666,
+        4042871667,
+        4042871668,
+        3296636557,
+        4042859171,
+        4042859170,
+        4042859169,
+        5753188578,
+        3116420353,
+        4042859167,
+        4042859168,
+        3296636551
+      ],
+      "geometry": [
+        {
+          "lat": 6.0095873,
+          "lon": 10.2595212
+        },
+        {
+          "lat": 6.0108156,
+          "lon": 10.2605102
+        },
+        {
+          "lat": 6.0113346,
+          "lon": 10.2609362
+        },
+        {
+          "lat": 6.0115791,
+          "lon": 10.2608354
+        },
+        {
+          "lat": 6.0120418,
+          "lon": 10.2607353
+        },
+        {
+          "lat": 6.0120938,
+          "lon": 10.2604056
+        },
+        {
+          "lat": 6.0123975,
+          "lon": 10.2596661
+        },
+        {
+          "lat": 6.0141918,
+          "lon": 10.2605006
+        },
+        {
+          "lat": 6.0148504,
+          "lon": 10.2593435
+        },
+        {
+          "lat": 6.0152182,
+          "lon": 10.2585074
+        },
+        {
+          "lat": 6.0152151,
+          "lon": 10.2578069
+        },
+        {
+          "lat": 6.015225,
+          "lon": 10.2557003
+        },
+        {
+          "lat": 6.0131294,
+          "lon": 10.2539388
+        },
+        {
+          "lat": 6.0126283,
+          "lon": 10.2558708
+        },
+        {
+          "lat": 6.0127083,
+          "lon": 10.2560156
+        },
+        {
+          "lat": 6.0126416,
+          "lon": 10.2560961
+        },
+        {
+          "lat": 6.0121134,
+          "lon": 10.2565601
+        },
+        {
+          "lat": 6.0117827,
+          "lon": 10.2569408
+        },
+        {
+          "lat": 6.0117616,
+          "lon": 10.2569651
+        },
+        {
+          "lat": 6.0111131,
+          "lon": 10.2577617
+        },
+        {
+          "lat": 6.0103902,
+          "lon": 10.2586173
+        },
+        {
+          "lat": 6.0095873,
+          "lon": 10.2595212
+        }
+      ],
+      "tags": {
+        "addr:city": "Bamenda",
+        "amenity": "university",
+        "internet_access": "no",
+        "name": "The University of Bamenda",
+        "name:fr": "Université de Bamenda",
+        "website": "https://ubastudent.online"
+      }
+    },
+    {
+      "type": "way",
+      "id": 401880374,
+      "bounds": {
+        "minlat": 6.0084129,
+        "minlon": 10.2515793,
+        "maxlat": 6.0129999,
+        "maxlon": 10.256669
+      },
+      "nodes": [
+        4042889288,
+        4042889389,
+        4042889390,
+        4042889391,
+        4042889392,
+        4042889393,
+        4042889394,
+        4042889395,
+        4042889399,
+        4042889398,
+        4042889396,
+        4042889397,
+        4042889288
+      ],
+      "geometry": [
+        {
+          "lat": 6.0084129,
+          "lon": 10.2557627
+        },
+        {
+          "lat": 6.0092082,
+          "lon": 10.2537304
+        },
+        {
+          "lat": 6.0098541,
+          "lon": 10.2539778
+        },
+        {
+          "lat": 6.0109433,
+          "lon": 10.2515793
+        },
+        {
+          "lat": 6.0119768,
+          "lon": 10.2521111
+        },
+        {
+          "lat": 6.012402,
+          "lon": 10.2529489
+        },
+        {
+          "lat": 6.0129999,
+          "lon": 10.253809
+        },
+        {
+          "lat": 6.0128599,
+          "lon": 10.254405
+        },
+        {
+          "lat": 6.0126137,
+          "lon": 10.2551033
+        },
+        {
+          "lat": 6.0124563,
+          "lon": 10.2560099
+        },
+        {
+          "lat": 6.0119281,
+          "lon": 10.2566054
+        },
+        {
+          "lat": 6.011431,
+          "lon": 10.256669
+        },
+        {
+          "lat": 6.0084129,
+          "lon": 10.2557627
+        }
+      ],
+      "tags": {
+        "amenity": "college",
+        "name": "Cameroon College of Arts Science and Technology",
+        "short_name": "CCAST"
+      }
+    },
+    {
+      "type": "way",
+      "id": 449542954,
+      "bounds": {
+        "minlat": 6.006599,
+        "minlon": 10.2600084,
+        "maxlat": 6.0083649,
+        "maxlon": 10.2616553
+      },
+      "nodes": [
+        4464892298,
+        4464892303,
+        4464892302,
+        4464892299,
+        4464892300,
+        4464892301,
+        4464892296,
+        4464892297,
+        4464892298
+      ],
+      "geometry": [
+        {
+          "lat": 6.0067964,
+          "lon": 10.2600084
+        },
+        {
+          "lat": 6.0083649,
+          "lon": 10.2607702
+        },
+        {
+          "lat": 6.007674,
+          "lon": 10.2616553
+        },
+        {
+          "lat": 6.0071912,
+          "lon": 10.2613656
+        },
+        {
+          "lat": 6.0073326,
+          "lon": 10.2611162
+        },
+        {
+          "lat": 6.0074526,
+          "lon": 10.2608963
+        },
+        {
+          "lat": 6.006599,
+          "lon": 10.2603786
+        },
+        {
+          "lat": 6.0067057,
+          "lon": 10.2601774
+        },
+        {
+          "lat": 6.0067964,
+          "lon": 10.2600084
+        }
+      ],
+      "tags": {
+        "amenity": "school",
+        "name": "Government school Bambili"
+      }
+    },
+    {
+      "type": "way",
+      "id": 883974037,
+      "bounds": {
+        "minlat": 6.0129767,
+        "minlon": 10.2558964,
+        "maxlat": 6.0135316,
+        "maxlon": 10.2564516
+      },
+      "nodes": [
+        8221089674,
+        8221089675,
+        8221089676,
+        8221089677,
+        8221089678,
+        8221089679,
+        8221089674
+      ],
+      "geometry": [
+        {
+          "lat": 6.0135316,
+          "lon": 10.2562371
+        },
+        {
+          "lat": 6.0132541,
+          "lon": 10.2559098
+        },
+        {
+          "lat": 6.0132141,
+          "lon": 10.2558964
+        },
+        {
+          "lat": 6.0131795,
+          "lon": 10.2559071
+        },
+        {
+          "lat": 6.0129767,
+          "lon": 10.2560869
+        },
+        {
+          "lat": 6.0133155,
+          "lon": 10.2564516
+        },
+        {
+          "lat": 6.0135316,
+          "lon": 10.2562371
+        }
+      ],
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "type": "way",
+      "id": 883974041,
+      "bounds": {
+        "minlat": 6.0136834,
+        "minlon": 10.2583647,
+        "maxlat": 6.014231,
+        "maxlon": 10.2589239
+      },
+      "nodes": [
+        8221089688,
+        8221089689,
+        8221089690,
+        8221089691,
+        8221089688
+      ],
+      "geometry": [
+        {
+          "lat": 6.0138269,
+          "lon": 10.2583647
+        },
+        {
+          "lat": 6.0136834,
+          "lon": 10.2585046
+        },
+        {
+          "lat": 6.0140876,
+          "lon": 10.2589239
+        },
+        {
+          "lat": 6.014231,
+          "lon": 10.2587841
+        },
+        {
+          "lat": 6.0138269,
+          "lon": 10.2583647
+        }
+      ],
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "type": "way",
+      "id": 883974046,
+      "bounds": {
+        "minlat": 6.0141002,
+        "minlon": 10.2592308,
+        "maxlat": 6.0144555,
+        "maxlon": 10.2595994
+      },
+      "nodes": [
+        8221089702,
+        8221089703,
+        8221089704,
+        8221089705,
+        8221089702
+      ],
+      "geometry": [
+        {
+          "lat": 6.0142658,
+          "lon": 10.2592308
+        },
+        {
+          "lat": 6.0141002,
+          "lon": 10.2593681
+        },
+        {
+          "lat": 6.0142899,
+          "lon": 10.2595994
+        },
+        {
+          "lat": 6.0144555,
+          "lon": 10.2594621
+        },
+        {
+          "lat": 6.0142658,
+          "lon": 10.2592308
+        }
+      ],
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "type": "way",
+      "id": 883974055,
+      "bounds": {
+        "minlat": 6.0113256,
+        "minlon": 10.258534,
+        "maxlat": 6.011923,
+        "maxlon": 10.2590705
+      },
+      "nodes": [
+        8221089745,
+        8221089746,
+        8221089747,
+        8221089748,
+        8221089745
+      ],
+      "geometry": [
+        {
+          "lat": 6.011923,
+          "lon": 10.2589674
+        },
+        {
+          "lat": 6.0118365,
+          "lon": 10.2590705
+        },
+        {
+          "lat": 6.0113256,
+          "lon": 10.258637
+        },
+        {
+          "lat": 6.011412,
+          "lon": 10.258534
+        },
+        {
+          "lat": 6.011923,
+          "lon": 10.2589674
+        }
+      ],
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "type": "way",
+      "id": 883978212,
+      "bounds": {
+        "minlat": 6.0104973,
+        "minlon": 10.2594032,
+        "maxlat": 6.0109077,
+        "maxlon": 10.2598125
+      },
+      "nodes": [
+        8221120323,
+        8221120324,
+        8221120325,
+        8221120326,
+        8221120323
+      ],
+      "geometry": [
+        {
+          "lat": 6.0106733,
+          "lon": 10.2594032
+        },
+        {
+          "lat": 6.0104973,
+          "lon": 10.2596209
+        },
+        {
+          "lat": 6.0107317,
+          "lon": 10.2598125
+        },
+        {
+          "lat": 6.0109077,
+          "lon": 10.2595948
+        },
+        {
+          "lat": 6.0106733,
+          "lon": 10.2594032
+        }
+      ],
+      "tags": {
+        "amenity": "parking"
+      }
+    },
+    {
+      "type": "way",
+      "id": 1051158669,
+      "bounds": {
+        "minlat": 6.0117812,
+        "minlon": 10.2566691,
+        "maxlat": 6.0128824,
+        "maxlon": 10.257737
+      },
+      "nodes": [
+        9659612822,
+        9659612823,
+        9659612824,
+        9659612825,
+        9659612822
+      ],
+      "geometry": [
+        {
+          "lat": 6.0128824,
+          "lon": 10.2572728
+        },
+        {
+          "lat": 6.0124933,
+          "lon": 10.257737
+        },
+        {
+          "lat": 6.0117812,
+          "lon": 10.2571331
+        },
+        {
+          "lat": 6.0121702,
+          "lon": 10.2566691
+        },
+        {
+          "lat": 6.0128824,
+          "lon": 10.2572728
+        }
+      ],
+      "tags": {
+        "amenity": "university",
+        "name": "LC Block"
+      }
+    },
+    {
+      "type": "way",
+      "id": 1051161787,
+      "bounds": {
+        "minlat": 6.0145213,
+        "minlon": 10.2543108,
+        "maxlat": 6.0147667,
+        "maxlon": 10.254579
+      },
+      "nodes": [
+        9659640573,
+        9659640574,
+        9659640575,
+        9659640576,
+        9659640577,
+        9659640573
+      ],
+      "geometry": [
+        {
+          "lat": 6.0146493,
+          "lon": 10.254579
+        },
+        {
+          "lat": 6.0145213,
+          "lon": 10.2545281
+        },
+        {
+          "lat": 6.0145906,
+          "lon": 10.2543108
+        },
+        {
+          "lat": 6.0147667,
+          "lon": 10.2543832
+        },
+        {
+          "lat": 6.014724,
+          "lon": 10.2544583
+        },
+        {
+          "lat": 6.0146493,
+          "lon": 10.254579
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "name": "Siyabonga Student Hostel",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "type": "way",
+      "id": 1051162043,
+      "bounds": {
+        "minlat": 6.0144626,
+        "minlon": 10.2545603,
+        "maxlat": 6.01462,
+        "maxlon": 10.2547373
+      },
+      "nodes": [
+        9659643490,
+        9659643491,
+        9659643492,
+        9659643493,
+        9659643494,
+        9659643490
+      ],
+      "geometry": [
+        {
+          "lat": 6.0145159,
+          "lon": 10.2545603
+        },
+        {
+          "lat": 6.01462,
+          "lon": 10.2546005
+        },
+        {
+          "lat": 6.0145613,
+          "lon": 10.2547373
+        },
+        {
+          "lat": 6.0144626,
+          "lon": 10.2547051
+        },
+        {
+          "lat": 6.0144866,
+          "lon": 10.2546166
+        },
+        {
+          "lat": 6.0145159,
+          "lon": 10.2545603
+        }
+      ],
+      "tags": {
+        "building": "yes",
+        "guest_house": "student_accomodation",
+        "name": "Summit Plaza Student Hostel",
+        "tourism": "hostel"
+      }
+    },
+    {
+      "type": "relation",
+      "id": 4096761,
+      "bounds": {
+        "minlat": 6.0126018,
+        "minlon": 10.2561118,
+        "maxlat": 6.0131673,
+        "maxlon": 10.2568118
+      },
+      "members": [
+        {
+          "type": "way",
+          "ref": "_fullGeom306799483",
+          "role": "outer",
+          "geometry": [
+            {
+              "lat": 6.0128521,
+              "lon": 10.2561118
+            },
+            {
+              "lat": 6.0129998,
+              "lon": 10.2562548
+            },
+            {
+              "lat": 6.0129828,
+              "lon": 10.2562724
+            },
+            {
+              "lat": 6.0131673,
+              "lon": 10.2564511
+            },
+            {
+              "lat": 6.0128217,
+              "lon": 10.2568118
+            },
+            {
+              "lat": 6.0126092,
+              "lon": 10.2565991
+            },
+            {
+              "lat": 6.0126018,
+              "lon": 10.2563731
+            },
+            {
+              "lat": 6.0128521,
+              "lon": 10.2561118
+            }
+          ]
+        },
+        {
+          "type": "way",
+          "ref": "_fullGeom306799482",
+          "role": "inner",
+          "geometry": [
+            {
+              "lat": 6.0128644,
+              "lon": 10.2563961
+            },
+            {
+              "lat": 6.0129443,
+              "lon": 10.2564735
+            },
+            {
+              "lat": 6.0128574,
+              "lon": 10.2565641
+            },
+            {
+              "lat": 6.0128067,
+              "lon": 10.256515
+            },
+            {
+              "lat": 6.0128068,
+              "lon": 10.2564562
+            },
+            {
+              "lat": 6.0128644,
+              "lon": 10.2563961
+            }
+          ]
+        }
+      ],
+      "tags": {
+        "amenity": "restaurant",
+        "building": "yes",
+        "description": "Food is available at this restaurant to all students of the institution at an 80% discount.",
+        "name": "University Restaurant",
+        "type": "multipolygon"
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Icham Hotel",
+        "category": "Hotel",
+        "latitude": 6.0053,
+        "longitude": 10.2534,
+        "description": "Hotel named Icham Hotel located opposite Hotel Elissam in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Hotel Elissam",
+        "category": "Hotel",
+        "latitude": 6.0052862,
+        "longitude": 10.2534128,
+        "description": "Hotel named Hotel Elissam located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Zenna Resort Center",
+        "category": "Hotel",
+        "latitude": 6.0074849,
+        "longitude": 10.2623399,
+        "description": "Hotel named Zenna Resort Center located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "42 Modern Rooms Cite",
+        "category": "Hotel",
+        "latitude": 6.0081,
+        "longitude": 10.2597,
+        "description": "Hotel named 42 Modern Rooms Cite located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Njualem Hostel / Lounge",
+        "category": "Hostel",
+        "latitude": 6.0062,
+        "longitude": 10.254,
+        "description": "Hostel named Njualem Hostel / Lounge located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "PACS Hostel / Residence",
+        "category": "Hostel",
+        "latitude": 6.0049,
+        "longitude": 10.2528,
+        "description": "Hostel named PACS Hostel / Residence located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Bambili Guest House",
+        "category": "Guest House",
+        "latitude": 6.0045,
+        "longitude": 10.2519,
+        "description": "Guest House named Bambili Guest House located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "PACS Restaurant",
+        "category": "Restaurant",
+        "latitude": 6.0049,
+        "longitude": 10.2528,
+        "description": "Restaurant named PACS Restaurant located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Apple Lounge",
+        "category": "Restaurant",
+        "latitude": 6.006,
+        "longitude": 10.2535,
+        "description": "Restaurant named Apple Lounge located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Miyanui Snack",
+        "category": "Restaurant",
+        "latitude": 6.0072,
+        "longitude": 10.255,
+        "description": "Restaurant named Miyanui Snack located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Monoprix Snack Bar",
+        "category": "Restaurant",
+        "latitude": 6.0068,
+        "longitude": 10.2542,
+        "description": "Restaurant named Monoprix Snack Bar located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Njualem Snack",
+        "category": "Restaurant",
+        "latitude": 6.0063,
+        "longitude": 10.2541,
+        "description": "Restaurant named Njualem Snack located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Above Drinking House",
+        "category": "Restaurant",
+        "latitude": 6.0085,
+        "longitude": 10.257,
+        "description": "Restaurant named Above Drinking House located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Vibes Bar & Snacks",
+        "category": "Restaurant",
+        "latitude": 6.007,
+        "longitude": 10.2555,
+        "description": "Restaurant named Vibes Bar & Snacks located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Blackrose Nightclub",
+        "category": "Restaurant",
+        "latitude": 6.0078,
+        "longitude": 10.2562,
+        "description": "Restaurant named Blackrose Nightclub located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "PACS Lounge",
+        "category": "Lounge",
+        "latitude": 6.0049,
+        "longitude": 10.2528,
+        "description": "Lounge named PACS Lounge located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Apple Lounge",
+        "category": "Lounge",
+        "latitude": 6.006,
+        "longitude": 10.2535,
+        "description": "Lounge named Apple Lounge located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Njualem Lounge",
+        "category": "Lounge",
+        "latitude": 6.0062,
+        "longitude": 10.254,
+        "description": "Lounge named Njualem Lounge located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Blackrose Nightclub",
+        "category": "Lounge",
+        "latitude": 6.0078,
+        "longitude": 10.2562,
+        "description": "Lounge named Blackrose Nightclub located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Above Drinking House",
+        "category": "Lounge",
+        "latitude": 6.0085,
+        "longitude": 10.257,
+        "description": "Lounge named Above Drinking House located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Vibes Bar",
+        "category": "Lounge",
+        "latitude": 6.007,
+        "longitude": 10.2555,
+        "description": "Lounge named Vibes Bar located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Monoprix Bar",
+        "category": "Lounge",
+        "latitude": 6.0068,
+        "longitude": 10.2542,
+        "description": "Lounge named Monoprix Bar located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Anilove Beauty Center",
+        "category": "Salon",
+        "latitude": 6.0067,
+        "longitude": 10.254,
+        "description": "Salon named Anilove Beauty Center located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Vyrusky’s Beauty Spa",
+        "category": "Salon",
+        "latitude": 6.0073,
+        "longitude": 10.2551,
+        "description": "Salon named Vyrusky’s Beauty Spa located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "IZ‑SPIZ CUTZ",
+        "category": "Salon",
+        "latitude": 6.0061,
+        "longitude": 10.2536,
+        "description": "Salon named IZ‑SPIZ CUTZ located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "NBLX Collections",
+        "category": "Salon",
+        "latitude": 6.0074,
+        "longitude": 10.2552,
+        "description": "Salon named NBLX Collections located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "High Skull",
+        "category": "Salon",
+        "latitude": 6.0069,
+        "longitude": 10.2543,
+        "description": "Salon named High Skull located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "KenzoBarbz",
+        "category": "Salon",
+        "latitude": 6.0065,
+        "longitude": 10.2539,
+        "description": "Salon named KenzoBarbz located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Prince Signature",
+        "category": "Salon",
+        "latitude": 6.0062,
+        "longitude": 10.2537,
+        "description": "Salon named Prince Signature located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "AJ Makeover Lite",
+        "category": "Salon",
+        "latitude": 6.0066,
+        "longitude": 10.2541,
+        "description": "Salon named AJ Makeover Lite located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Wosoh Fashion",
+        "category": "Salon",
+        "latitude": 6.0068,
+        "longitude": 10.2544,
+        "description": "Salon named Wosoh Fashion located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Puffi Daddy Studio",
+        "category": "Salon",
+        "latitude": 6.0063,
+        "longitude": 10.2538,
+        "description": "Salon named Puffi Daddy Studio located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Presbyterian Church Bambili",
+        "category": "Church",
+        "latitude": 6.0055,
+        "longitude": 10.253,
+        "description": "Church named Presbyterian Church Bambili located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Catholic Church Bambili Parish",
+        "category": "Church",
+        "latitude": 6.0057,
+        "longitude": 10.2532,
+        "description": "Church named Catholic Church Bambili Parish located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Baptist Church Bambili",
+        "category": "Church",
+        "latitude": 6.0059,
+        "longitude": 10.2534,
+        "description": "Church named Baptist Church Bambili located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Full Gospel Mission Bambili",
+        "category": "Church",
+        "latitude": 6.0061,
+        "longitude": 10.2536,
+        "description": "Church named Full Gospel Mission Bambili located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Apostolic Church Bambili",
+        "category": "Church",
+        "latitude": 6.0063,
+        "longitude": 10.2538,
+        "description": "Church named Apostolic Church Bambili located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Pentecostal Assemblies Bambili",
+        "category": "Church",
+        "latitude": 6.0065,
+        "longitude": 10.254,
+        "description": "Church named Pentecostal Assemblies Bambili located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Christ Embassy Bambili",
+        "category": "Church",
+        "latitude": 6.0067,
+        "longitude": 10.2542,
+        "description": "Church named Christ Embassy Bambili located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Provision Stores",
+        "category": "Shop",
+        "latitude": 6.0072,
+        "longitude": 10.255,
+        "description": "Shop named Provision Stores located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Pharmacy",
+        "category": "Shop",
+        "latitude": 6.006,
+        "longitude": 10.2535,
+        "description": "Shop named Pharmacy located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Stationery Shop",
+        "category": "Shop",
+        "latitude": 6.0061,
+        "longitude": 10.2536,
+        "description": "Shop named Stationery Shop located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Printing & Cyber Café",
+        "category": "Shop",
+        "latitude": 6.0062,
+        "longitude": 10.2537,
+        "description": "Shop named Printing & Cyber Café located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Tailoring Shop",
+        "category": "Shop",
+        "latitude": 6.0073,
+        "longitude": 10.2551,
+        "description": "Shop named Tailoring Shop located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Agric School Road kiosks",
+        "category": "Shop",
+        "latitude": 6.0049,
+        "longitude": 10.2528,
+        "description": "Shop named Agric School Road kiosks located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Mile Ten shops and services",
+        "category": "Shop",
+        "latitude": 6.0085,
+        "longitude": 10.257,
+        "description": "Shop named Mile Ten shops and services located in Bambili."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "ENS Street Fast Food Cluster",
+        "category": "Restaurant",
+        "latitude": 6.0063,
+        "longitude": 10.2536,
+        "description": "A cluster of fast food joints along ENS Street serving students and locals."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Three Corners Mama Put Zone",
+        "category": "Restaurant",
+        "latitude": 6.0071,
+        "longitude": 10.2552,
+        "description": "Local kitchens offering traditional meals at affordable prices."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Student Beer Parlors - ENS Street",
+        "category": "Lounge",
+        "latitude": 6.0064,
+        "longitude": 10.2537,
+        "description": "Popular beer parlors frequented by students for relaxation and socializing."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Local Revival Church - Three Corners",
+        "category": "Church",
+        "latitude": 6.0075,
+        "longitude": 10.2553,
+        "description": "A revival church known for vibrant worship and youth gatherings."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Evangelical Fellowship - ENS Street",
+        "category": "Church",
+        "latitude": 6.0066,
+        "longitude": 10.2538,
+        "description": "Evangelical church serving the student community near ENS."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "ENS Campus Stationery Cluster",
+        "category": "Shop",
+        "latitude": 6.0062,
+        "longitude": 10.2536,
+        "description": "Group of stationery shops near ENS campus offering books and supplies."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "ENS Street Tailoring Zone",
+        "category": "Shop",
+        "latitude": 6.0063,
+        "longitude": 10.2537,
+        "description": "Tailoring shops offering custom clothing and repairs for students."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "ENS Street Cyber Café Hub",
+        "category": "Shop",
+        "latitude": 6.0064,
+        "longitude": 10.2538,
+        "description": "Cyber cafés providing printing, internet, and academic services."
+      }
+    },
+    {
+      "type": "custom",
+      "data": {
+        "name": "Mile Ten Junction Hostel Cluster",
+        "category": "Hostel",
+        "latitude": 6.0086,
+        "longitude": 10.2571,
+        "description": "Group of student hostels located around Mile Ten Junction."
+      }
+    }
+  ]
+}
+
+]
