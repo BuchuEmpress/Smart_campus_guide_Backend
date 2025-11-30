@@ -10,9 +10,16 @@ __pycache__/
 *.pyd
 .Python
 
-# Data Files (contains sensitive campus info)
-data/campus_locations.json
-data/campus_locations_embeddings.json
+# Data Files - Ignore specific sensitive files
+data/locations/campus_locations.json
+data/locations/campus_locations_embeddings.json
+
+# Ignore topic data but keep templates
+data/topics/*.json
+!data/topics/topics_template.json
+
+# Ignore cache files
+data/cache/*.json
 
 # Config Files (contains API keys and secrets)
 config/qdrant_config.json
