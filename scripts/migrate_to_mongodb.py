@@ -52,7 +52,7 @@ def migrate_json_file(file_path: str, topic_service: TopicService):
             else:
                 topics = [data]
         
-        print(f"   Found {len(topics)} topics in file")
+        print(f"  Found {len(topics)} topics in file")
         
         success_count = 0
         error_count = 0
@@ -66,14 +66,17 @@ def migrate_json_file(file_path: str, topic_service: TopicService):
                 )
                 
                 if existing:
-                    print(f"   ⚠️  [{i}] Skipped (duplicate): {topic.get('title', 'Unknown')}")
+                    print(f"  ⚠️  [{i}] Skipped (duplicate): {topic.get('title', 'Unknown')}")
                     continue
                 
                 # Add timestamps if missing
+                current_time_iso = datetime.utcnow().isoformat() # Get ISO string
+                
+                # ✅ FIX: Assign ISO-formatted string instead of datetime object
                 if 'created_at' not in topic:
-                    topic['created_at'] = datetime.utcnow()
+                    topic['created_at'] = current_time_iso
                 if 'updated_at' not in topic:
-                    topic['updated_at'] = datetime.utcnow()
+                    topic['updated_at'] = current_time_iso
                 
                 # Add stats if missing
                 if 'views' not in topic:
@@ -86,20 +89,20 @@ def migrate_json_file(file_path: str, topic_service: TopicService):
                 
                 if topic_id:
                     success_count += 1
-                    print(f"   ✅ [{i}] Migrated: {topic.get('title', 'Unknown')}")
+                    print(f"  ✅ [{i}] Migrated: {topic.get('title', 'Unknown')}")
                 else:
                     error_count += 1
-                    print(f"   ❌ [{i}] Failed: {topic.get('title', 'Unknown')}")
-            
+                    print(f"  ❌ [{i}] Failed: {topic.get('title', 'Unknown')}")
+                
             except Exception as e:
                 error_count += 1
-                print(f"   ❌ [{i}] Error: {str(e)}")
+                print(f"  ❌ [{i}] Error: {str(e)}")
         
-        print(f"\n   Summary: {success_count} success, {error_count} errors")
+        print(f"\n  Summary: {success_count} success, {error_count} errors")
         return (success_count, error_count)
         
     except Exception as e:
-        print(f"   ❌ Failed to process file: {str(e)}")
+        print(f"  ❌ Failed to process file: {str(e)}")
         return (0, 1)
 
 
@@ -120,10 +123,10 @@ def migrate_directory(dir_path: str, topic_service: TopicService):
     json_files = list(Path(dir_path).glob('*.json'))
     
     if not json_files:
-        print("   ⚠️  No JSON files found")
+        print("  ⚠️  No JSON files found")
         return (0, 0)
     
-    print(f"   Found {len(json_files)} JSON files")
+    print(f"  Found {len(json_files)} JSON files")
     
     total_success = 0
     total_errors = 0
@@ -146,11 +149,11 @@ def main():
     if len(sys.argv) < 2:
         print("\n❌ ERROR: No input specified")
         print("\nUSAGE:")
-        print("   python scripts/migrate_to_mongodb.py <file.json>")
-        print("   python scripts/migrate_to_mongodb.py <directory/>")
+        print("  python scripts/migrate_to_mongodb.py <file.json>")
+        print("  python scripts/migrate_to_mongodb.py <directory/>")
         print("\nEXAMPLES:")
-        print("   python scripts/migrate_to_mongodb.py data/topics/computer_engineering.json")
-        print("   python scripts/migrate_to_mongodb.py data/topics/")
+        print("  python scripts/migrate_to_mongodb.py data/topics/computer_engineering.json")
+        print("  python scripts/migrate_to_mongodb.py data/topics/")
         sys.exit(1)
     
     input_path = sys.argv[1]
@@ -184,23 +187,24 @@ def main():
         print("\n" + "="*80)
         print("📊 MIGRATION SUMMARY")
         print("="*80)
-        print(f"   ✅ Successfully migrated: {success} topics")
-        print(f"   ❌ Errors: {errors}")
-        print(f"   📈 Success rate: {(success/(success+errors)*100) if (success+errors) > 0 else 0:.1f}%")
+        print(f"  ✅ Successfully migrated: {success} topics")
+        print(f"  ❌ Errors: {errors}")
+        print(f"  📈 Success rate: {(success/(success+errors)*100) if (success+errors) > 0 else 0:.1f}%")
         print("="*80 + "\n")
         
         # Show collection stats
         print("📊 MongoDB Collection Stats:")
         print("-" * 80)
-        total = len(topic_service.list_topics(limit=1000))
-        print(f"   Total topics in database: {total}")
+        # Using list_topics with no filters (limit=1000) for approximate total count
+        total = len(topic_service.list_topics(limit=100000)) # Increased limit for more accurate count
+        print(f"  Total topics in database: {total}")
         
         # Show by category
         categories = topic_service.get_unique_categories()
-        print(f"   Categories: {len(categories)}")
+        print(f"  Categories: {len(categories)}")
         for cat in categories:
-            count = len(topic_service.list_topics(filter_query={'category': cat}, limit=1000))
-            print(f"      - {cat}: {count} topics")
+            count = len(topic_service.list_topics(filter_query={'category': cat}, limit=100000))
+            print(f"    - {cat}: {count} topics")
         
         print("\n✅ Migration complete!")
         

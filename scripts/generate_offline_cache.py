@@ -42,7 +42,8 @@ def generate_cache(min_searches: int = 5, limit: int = 100):
         analytics = AnalyticsService()
         
         print("🗄️  Initializing Qdrant service...")
-        qdrant = QdrantService(load_model=False)
+        # ✅ FIX: Changed load_model to True because qdrant.search() requires the embedding model.
+        qdrant = QdrantService(load_model=True) 
         
         # Get popular locations from analytics
         print(f"\n🔍 Finding popular locations (min {min_searches} searches)...")
@@ -83,7 +84,7 @@ def generate_cache(min_searches: int = 5, limit: int = 100):
                     
                     if i % 10 == 0:
                         print(f"   Processed {i}/{len(popular)} locations...")
-            
+                
             except Exception as e:
                 print(f"   ⚠️  Error processing {pop['location_name']}: {str(e)}")
                 continue
@@ -149,9 +150,9 @@ if __name__ == "__main__":
     
     parser = argparse.ArgumentParser(description='Generate offline cache')
     parser.add_argument('--min-searches', type=int, default=5,
-                       help='Minimum searches for location to be cached (default: 5)')
+                        help='Minimum searches for location to be cached (default: 5)')
     parser.add_argument('--limit', type=int, default=100,
-                       help='Maximum locations to cache (default: 100)')
+                        help='Maximum locations to cache (default: 100)')
     
     args = parser.parse_args()
     

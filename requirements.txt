@@ -15,7 +15,8 @@ uvicorn==0.38.0
 # requests is already here - that's all we need for OSM!
 
 # AI Services
-google-generativeai==0.8.5
+google-genai==1.52.0
+
 
 # Data Validation and Configuration
 pydantic==2.12.4

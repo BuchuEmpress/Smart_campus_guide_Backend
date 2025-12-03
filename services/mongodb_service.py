@@ -342,14 +342,14 @@ class MongoDBService:
         Args:
             search_data: Dictionary containing search information:
                 {
-                    'query': str,                    # What user searched
-                    'location_id': str,              # Qdrant location ID (if found)
-                    'location_name': str,            # Location name
-                    'location_type': str,            # building, landmark, etc.
+                    'query': str,                       # What user searched
+                    'location_id': str,                 # Qdrant location ID (if found)
+                    'location_name': str,               # Location name
+                    'location_type': str,               # building, landmark, etc.
                     'is_on_campus': bool,
                     'user_location': {'lat': float, 'lon': float},
                     'response_time_ms': int,
-                    'search_source': str,            # 'qdrant' or 'google_maps'
+                    'search_source': str,               # 'qdrant' or 'google_maps'
                     'session_id': str
                 }
         

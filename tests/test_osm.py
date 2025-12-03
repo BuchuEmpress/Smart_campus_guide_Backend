@@ -11,6 +11,7 @@ Tests all OpenStreetMap functionality:
 
 import pytest
 from unittest.mock import Mock, patch, MagicMock
+import requests # ✅ FIX: Added missing import for requests
 from services.osm_routing_service import OSMRoutingService
 
 
@@ -172,8 +173,8 @@ def test_get_route_network_error(osm_service):
 def test_get_route_timeout(osm_service):
     """Test route with timeout."""
     with patch('requests.get') as mock_get:
-        import requests
-        mock_get.side_effect = requests.exceptions.Timeout("Timeout")
+        # requests.exceptions is available due to the top-level import
+        mock_get.side_effect = requests.exceptions.Timeout("Timeout") 
         
         route = osm_service.get_route(
             start=(5.9631, 10.1591),

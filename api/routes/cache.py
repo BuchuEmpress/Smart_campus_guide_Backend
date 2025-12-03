@@ -20,6 +20,7 @@ from api.models.cache_models import (
     CacheGenerateRequest,
     CacheDataResponse
 )
+# Assuming these services are synchronous (which is typical for I/O operations like file caching)
 from services.osm_cache_service import CacheService
 from services.analytics_service import AnalyticsService
 
@@ -175,7 +176,8 @@ async def generate_cache(
         )
 
 
-async def _generate_cache_task(
+# ✅ FIX: Removed 'async' keyword from background task function
+def _generate_cache_task( 
     cache_service: CacheService,
     analytics_service: AnalyticsService,
     min_searches: int,
@@ -439,3 +441,5 @@ async def cache_health_check():
                 'timestamp': str(datetime.now())
             }
         )
+
+# EOF

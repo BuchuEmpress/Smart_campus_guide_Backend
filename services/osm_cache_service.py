@@ -13,7 +13,7 @@ from pathlib import Path
 from services.mongodb_service import MongoDBService
 from services.analytics_service import AnalyticsService
 from services.qdrant_service import QdrantService
-from services.osm_routing_service import OSMRoutingService  # ✅ FIXED!
+from services.osm_routing_service import OSMRoutingService # ✅ FIXED!
 from services.gemini_service import GeminiService
 
 logging.basicConfig(level=logging.INFO)

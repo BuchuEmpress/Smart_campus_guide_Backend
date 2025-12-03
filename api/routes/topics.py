@@ -2,29 +2,21 @@
 Topics Routes Module
 
 Handles all topic-related endpoints:
-- Create and manage academic topics
-- Search topics by keyword or category
-- Check for duplicate topics
-- Get topic details and statistics
-- Future: AI-powered topic suggestions
+- CRUD operations
+- Search
+- Statistics
+- AI-powered suggestions, improvements, and similarity checks
 """
 
 import logging
-from typing import List, Optional
-from datetime import datetime
+import asyncio # Import asyncio for running blocking calls in a thread pool
+from typing import List, Dict
 from fastapi import APIRouter, HTTPException, Query, Path, Body
-from fastapi.responses import JSONResponse
 
-from api.models.topics_models import (
-    TopicCreateRequest,
-    TopicResponse,
-    TopicSearchRequest,
-    TopicSearchResponse,
-    TopicUpdateRequest,
-    TopicStatsResponse
-)
+from api.models import topics_models as models
 from services.topic_service import TopicService
 from services.mongodb_service import MongoDBService
+from services.topic_intelligence_service import TopicIntelligenceService
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -33,552 +25,214 @@ logger = logging.getLogger(__name__)
 # Initialize router
 router = APIRouter(prefix="/api/topics", tags=["Topics"])
 
-# Initialize services
-topic_service = None
-mongodb_service = None
+# Initialize services (assumed to be synchronous)
+mongodb_service = MongoDBService()
+topic_service = TopicService(mongodb_service)
+# Note: TopicIntelligenceService relies on TopicService, which is blocking.
+topic_ai = TopicIntelligenceService(topic_service=topic_service)
 
-
-def get_services():
-    """Initialize services if not already initialized."""
-    global topic_service, mongodb_service
-    
-    if not mongodb_service:
-        mongodb_service = MongoDBService()
-    if not topic_service:
-        topic_service = TopicService(mongodb_service)
-    
-    return {
-        'topics': topic_service,
-        'mongodb': mongodb_service
-    }
-
-
-@router.post("/", response_model=TopicResponse, status_code=201)
-async def create_topic(request: TopicCreateRequest):
+# ==========================
+# CRUD ENDPOINTS
+# ==========================
+@router.post("/", response_model=models.TopicResponse)
+async def create_topic(request: models.TopicCreateRequest):
     """
-    Create a new academic topic.
-    
-    Validates that topic doesn't already exist before creation.
-    Automatically adds metadata like creation timestamp and initial stats.
-    
-    Args:
-        request: TopicCreateRequest with topic details
-    
-    Returns:
-        TopicResponse with created topic information
-    
-    Raises:
-        HTTPException: 400 if topic already exists, 500 for server errors
+    Create a new topic.
+    Checks for duplicates and saves to MongoDB.
     """
     try:
-        services = get_services()
-        logger.info(f"Creating topic: {request.title}")
-        
-        # Check for duplicates
-        existing = services['topics'].check_duplicate(
+        # ✅ FIX: Wrap blocking find_duplicate call
+        find_duplicate = topic_service.find_duplicate
+        duplicates = await asyncio.to_thread(
+            find_duplicate,
             title=request.title,
-            category=request.category
+            department=request.department,
+            option=request.option,
+            year=request.year
         )
+        if duplicates:
+            raise HTTPException(status_code=400, detail="Topic already exists.")
         
-        if existing:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Topic already exists: {request.title}"
-            )
+        # ✅ FIX: Wrap blocking add_topic call
+        add_topic = topic_service.add_topic
+        topic_id = await asyncio.to_thread(add_topic, request.dict())
         
-        # Create topic
-        topic_data = {
-            'title': request.title,
-            'category': request.category,
-            'description': request.description,
-            'difficulty': request.difficulty,
-            'tags': request.tags,
-            'prerequisites': request.prerequisites,
-            'resources': request.resources,
-            'created_at': datetime.utcnow(),
-            'updated_at': datetime.utcnow(),
-            'views': 0,
-            'searches': 0
-        }
+        # ✅ FIX: Wrap blocking get_topic_by_id call
+        get_topic = topic_service.get_topic_by_id
+        topic = await asyncio.to_thread(get_topic, topic_id)
         
-        topic_id = services['topics'].add_topic(topic_data)
-        
-        if not topic_id:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to create topic"
-            )
-        
-        # Get created topic
-        created_topic = services['topics'].get_topic_by_id(topic_id)
-        
-        logger.info(f"Topic created successfully: {topic_id}")
-        
-        return TopicResponse(
-            id=str(topic_id),
-            title=created_topic['title'],
-            category=created_topic['category'],
-            description=created_topic['description'],
-            difficulty=created_topic['difficulty'],
-            tags=created_topic.get('tags', []),
-            prerequisites=created_topic.get('prerequisites', []),
-            resources=created_topic.get('resources', []),
-            created_at=created_topic['created_at'],
-            updated_at=created_topic['updated_at'],
-            views=created_topic.get('views', 0),
-            searches=created_topic.get('searches', 0)
-        )
-        
+        return models.TopicResponse(**topic, topic_id=str(topic_id))
+    
     except HTTPException:
         raise
     except Exception as e:
         logger.error(f"Error creating topic: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to create topic: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail="Failed to create topic")
 
-
-@router.get("/", response_model=List[TopicResponse])
+@router.get("/", response_model=List[models.TopicResponse])
 async def list_topics(
-    category: Optional[str] = Query(None, description="Filter by category"),
-    difficulty: Optional[str] = Query(None, description="Filter by difficulty level"),
-    limit: int = Query(50, ge=1, le=100, description="Maximum number of topics to return"),
-    skip: int = Query(0, ge=0, description="Number of topics to skip")
+    department: str = Query(None),
+    option: str = Query(None),
+    year: int = Query(None)
 ):
-    """
-    List all topics with optional filtering.
+    """List topics with optional filters."""
+    filters = {'department': department, 'option': option, 'year': year}
     
-    Supports filtering by category and difficulty level.
-    Includes pagination with limit and skip parameters.
+    # Clean filters (remove None values)
+    clean_filters = {k: v for k, v in filters.items() if v is not None}
     
-    Args:
-        category: Optional category filter
-        difficulty: Optional difficulty filter (beginner, intermediate, advanced)
-        limit: Maximum results to return (1-100)
-        skip: Number of results to skip for pagination
+    # ✅ FIX: Wrap blocking list_topics call
+    list_func = topic_service.list_topics
+    topics = await asyncio.to_thread(list_func, filters=clean_filters)
     
-    Returns:
-        List of TopicResponse objects
-    """
-    try:
-        services = get_services()
-        logger.info(f"Listing topics: category={category}, difficulty={difficulty}")
-        
-        # Build filter
-        filter_query = {}
-        if category:
-            filter_query['category'] = category
-        if difficulty:
-            filter_query['difficulty'] = difficulty
-        
-        # Get topics
-        topics = services['topics'].list_topics(
-            filter_query=filter_query,
-            limit=limit,
-            skip=skip
-        )
-        
-        # Convert to response format
-        response = []
-        for topic in topics:
-            response.append(TopicResponse(
-                id=str(topic['_id']),
-                title=topic['title'],
-                category=topic['category'],
-                description=topic.get('description', ''),
-                difficulty=topic.get('difficulty', 'intermediate'),
-                tags=topic.get('tags', []),
-                prerequisites=topic.get('prerequisites', []),
-                resources=topic.get('resources', []),
-                created_at=topic.get('created_at'),
-                updated_at=topic.get('updated_at'),
-                views=topic.get('views', 0),
-                searches=topic.get('searches', 0)
-            ))
-        
-        logger.info(f"Returned {len(response)} topics")
-        return response
-        
-    except Exception as e:
-        logger.error(f"Error listing topics: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list topics: {str(e)}"
-        )
+    return [models.TopicResponse(**t, topic_id=str(t['_id'])) for t in topics]
 
+@router.get("/{topic_id}", response_model=models.TopicResponse)
+async def get_topic(topic_id: str = Path(...)):
+    """Get a single topic by ID."""
+    # ✅ FIX: Wrap blocking get_topic_by_id call
+    get_func = topic_service.get_topic_by_id
+    topic = await asyncio.to_thread(get_func, topic_id)
+    
+    if not topic:
+        raise HTTPException(status_code=404, detail="Topic not found")
+    return models.TopicResponse(**topic, topic_id=str(topic_id))
 
-@router.get("/{topic_id}", response_model=TopicResponse)
-async def get_topic(
-    topic_id: str = Path(..., description="Topic ID")
-):
-    """
-    Get detailed information about a specific topic.
+@router.put("/{topic_id}", response_model=models.TopicResponse)
+async def update_topic(topic_id: str, request: models.TopicUpdateRequest = Body(...)):
+    """Update topic fields."""
+    # ✅ FIX: Wrap blocking update_topic call
+    update_func = topic_service.update_topic
+    await asyncio.to_thread(update_func, topic_id, request.dict(exclude_none=True))
     
-    Increments view count when topic is accessed.
+    # ✅ FIX: Wrap blocking get_topic_by_id call
+    get_func = topic_service.get_topic_by_id
+    topic = await asyncio.to_thread(get_func, topic_id)
     
-    Args:
-        topic_id: Topic identifier (MongoDB ObjectId)
-    
-    Returns:
-        TopicResponse with complete topic information
-    
-    Raises:
-        HTTPException: 404 if topic not found, 500 for server errors
-    """
-    try:
-        services = get_services()
-        logger.info(f"Getting topic: {topic_id}")
+    if not topic:
+        # Should ideally not happen if update succeeded, but good practice
+        raise HTTPException(status_code=404, detail="Topic not found after update") 
         
-        # Get topic
-        topic = services['topics'].get_topic_by_id(topic_id)
-        
-        if not topic:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Topic not found: {topic_id}"
-            )
-        
-        # Increment view count
-        services['topics'].increment_views(topic_id)
-        
-        return TopicResponse(
-            id=str(topic['_id']),
-            title=topic['title'],
-            category=topic['category'],
-            description=topic.get('description', ''),
-            difficulty=topic.get('difficulty', 'intermediate'),
-            tags=topic.get('tags', []),
-            prerequisites=topic.get('prerequisites', []),
-            resources=topic.get('resources', []),
-            created_at=topic.get('created_at'),
-            updated_at=topic.get('updated_at'),
-            views=topic.get('views', 0) + 1,  # Include the current view
-            searches=topic.get('searches', 0)
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error getting topic: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get topic: {str(e)}"
-        )
-
-
-@router.post("/search", response_model=TopicSearchResponse)
-async def search_topics(request: TopicSearchRequest):
-    """
-    Search topics by keyword with optional filters.
-    
-    Searches across title, description, tags, and category fields.
-    Increments search count for found topics.
-    
-    Args:
-        request: TopicSearchRequest with query and filters
-    
-    Returns:
-        TopicSearchResponse with matching topics and metadata
-    """
-    try:
-        services = get_services()
-        logger.info(f"Searching topics: '{request.query}'")
-        
-        # Search topics
-        results = services['topics'].search_topics(
-            query=request.query,
-            category=request.category,
-            difficulty=request.difficulty,
-            limit=request.limit
-        )
-        
-        # Increment search counts for found topics
-        for topic in results:
-            try:
-                services['topics'].increment_searches(str(topic['_id']))
-            except Exception as e:
-                logger.warning(f"Failed to increment search count: {str(e)}")
-        
-        # Convert to response format
-        topics = []
-        for topic in results:
-            topics.append(TopicResponse(
-                id=str(topic['_id']),
-                title=topic['title'],
-                category=topic['category'],
-                description=topic.get('description', ''),
-                difficulty=topic.get('difficulty', 'intermediate'),
-                tags=topic.get('tags', []),
-                prerequisites=topic.get('prerequisites', []),
-                resources=topic.get('resources', []),
-                created_at=topic.get('created_at'),
-                updated_at=topic.get('updated_at'),
-                views=topic.get('views', 0),
-                searches=topic.get('searches', 0)
-            ))
-        
-        logger.info(f"Search found {len(topics)} results")
-        
-        return TopicSearchResponse(
-            query=request.query,
-            total_results=len(topics),
-            topics=topics,
-            filters_applied={
-                'category': request.category,
-                'difficulty': request.difficulty
-            }
-        )
-        
-    except Exception as e:
-        logger.error(f"Error searching topics: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Search failed: {str(e)}"
-        )
-
-
-@router.put("/{topic_id}", response_model=TopicResponse)
-async def update_topic(
-    topic_id: str = Path(..., description="Topic ID"),
-    request: TopicUpdateRequest = Body(...)
-):
-    """
-    Update an existing topic.
-    
-    Only provided fields will be updated. Automatically updates the updated_at timestamp.
-    
-    Args:
-        topic_id: Topic identifier
-        request: TopicUpdateRequest with fields to update
-    
-    Returns:
-        TopicResponse with updated topic information
-    
-    Raises:
-        HTTPException: 404 if topic not found, 500 for server errors
-    """
-    try:
-        services = get_services()
-        logger.info(f"Updating topic: {topic_id}")
-        
-        # Check if topic exists
-        existing = services['topics'].get_topic_by_id(topic_id)
-        if not existing:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Topic not found: {topic_id}"
-            )
-        
-        # Build update data (only include provided fields)
-        update_data = {'updated_at': datetime.utcnow()}
-        
-        if request.title is not None:
-            update_data['title'] = request.title
-        if request.description is not None:
-            update_data['description'] = request.description
-        if request.difficulty is not None:
-            update_data['difficulty'] = request.difficulty
-        if request.tags is not None:
-            update_data['tags'] = request.tags
-        if request.prerequisites is not None:
-            update_data['prerequisites'] = request.prerequisites
-        if request.resources is not None:
-            update_data['resources'] = request.resources
-        
-        # Update topic
-        success = services['topics'].update_topic(topic_id, update_data)
-        
-        if not success:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to update topic"
-            )
-        
-        # Get updated topic
-        updated = services['topics'].get_topic_by_id(topic_id)
-        
-        logger.info(f"Topic updated successfully: {topic_id}")
-        
-        return TopicResponse(
-            id=str(updated['_id']),
-            title=updated['title'],
-            category=updated['category'],
-            description=updated.get('description', ''),
-            difficulty=updated.get('difficulty', 'intermediate'),
-            tags=updated.get('tags', []),
-            prerequisites=updated.get('prerequisites', []),
-            resources=updated.get('resources', []),
-            created_at=updated.get('created_at'),
-            updated_at=updated.get('updated_at'),
-            views=updated.get('views', 0),
-            searches=updated.get('searches', 0)
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error updating topic: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to update topic: {str(e)}"
-        )
-
+    return models.TopicResponse(**topic, topic_id=str(topic_id))
 
 @router.delete("/{topic_id}", status_code=204)
-async def delete_topic(
-    topic_id: str = Path(..., description="Topic ID")
-):
-    """
-    Delete a topic.
-    
-    Args:
-        topic_id: Topic identifier
-    
-    Returns:
-        204 No Content on success
-    
-    Raises:
-        HTTPException: 404 if topic not found, 500 for server errors
-    """
-    try:
-        services = get_services()
-        logger.info(f"Deleting topic: {topic_id}")
-        
-        # Check if topic exists
-        existing = services['topics'].get_topic_by_id(topic_id)
-        if not existing:
-            raise HTTPException(
-                status_code=404,
-                detail=f"Topic not found: {topic_id}"
-            )
-        
-        # Delete topic
-        success = services['topics'].delete_topic(topic_id)
-        
-        if not success:
-            raise HTTPException(
-                status_code=500,
-                detail="Failed to delete topic"
-            )
-        
-        logger.info(f"Topic deleted successfully: {topic_id}")
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Error deleting topic: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to delete topic: {str(e)}"
-        )
+async def delete_topic(topic_id: str):
+    """Delete a topic."""
+    # ✅ FIX: Wrap blocking delete_topic call
+    delete_func = topic_service.delete_topic
+    await asyncio.to_thread(delete_func, topic_id)
+    # Return 204 No Content
 
+# ==========================
+# SEARCH ENDPOINT
+# ==========================
+@router.post("/search", response_model=models.TopicSearchResponse)
+async def search_topics(request: models.TopicSearchRequest):
+    """Search topics with filters."""
+    # ✅ FIX: Wrap blocking search_topics call
+    search_func = topic_service.search_topics
+    results = await asyncio.to_thread(
+        search_func,
+        query=request.query,
+        department=request.department,
+        option=request.option,
+        year=request.year,
+        limit=request.limit
+    )
+    return models.TopicSearchResponse(
+        query=request.query,
+        total_results=len(results),
+        topics=[models.TopicResponse(**t, topic_id=str(t['_id'])) for t in results],
+        filters_applied=request.dict(exclude_none=True)
+    )
 
-@router.get("/stats/overview", response_model=TopicStatsResponse)
+# ==========================
+# STATISTICS ENDPOINT
+# ==========================
+@router.get("/stats/overview", response_model=models.TopicStatsResponse)
 async def get_topic_statistics():
-    """
-    Get overall topic statistics.
+    """Get topic statistics."""
+    # ✅ FIX: Wrap blocking list_topics call
+    list_func = topic_service.list_topics
+    all_topics = await asyncio.to_thread(list_func)
     
-    Returns aggregated statistics including:
-    - Total topics count
-    - Topics by category
-    - Topics by difficulty
-    - Most viewed topics
-    - Most searched topics
+    total_topics = len(all_topics)
+    by_department: Dict[str, int] = {}
+    by_option: Dict[str, int] = {}
+    by_year: Dict[int, int] = {}
     
-    Returns:
-        TopicStatsResponse with comprehensive statistics
-    """
-    try:
-        services = get_services()
-        logger.info("Getting topic statistics")
+    for t in all_topics:
+        # Use .get() with default values to handle missing keys gracefully
+        dept = t.get('department')
+        opt = t.get('option')
+        year = t.get('year')
         
-        # Get all topics for statistics
-        all_topics = services['topics'].list_topics(limit=1000)
-        
-        # Calculate statistics
-        total_topics = len(all_topics)
-        
-        # Count by category
-        by_category = {}
-        for topic in all_topics:
-            category = topic.get('category', 'Uncategorized')
-            by_category[category] = by_category.get(category, 0) + 1
-        
-        # Count by difficulty
-        by_difficulty = {}
-        for topic in all_topics:
-            difficulty = topic.get('difficulty', 'intermediate')
-            by_difficulty[difficulty] = by_difficulty.get(difficulty, 0) + 1
-        
-        # Most viewed
-        most_viewed = sorted(
-            all_topics,
-            key=lambda x: x.get('views', 0),
-            reverse=True
-        )[:10]
-        
-        # Most searched
-        most_searched = sorted(
-            all_topics,
-            key=lambda x: x.get('searches', 0),
-            reverse=True
-        )[:10]
-        
-        logger.info(f"Statistics calculated for {total_topics} topics")
-        
-        return TopicStatsResponse(
-            total_topics=total_topics,
-            by_category=by_category,
-            by_difficulty=by_difficulty,
-            most_viewed=[
-                {
-                    'id': str(t['_id']),
-                    'title': t['title'],
-                    'views': t.get('views', 0)
-                }
-                for t in most_viewed
-            ],
-            most_searched=[
-                {
-                    'id': str(t['_id']),
-                    'title': t['title'],
-                    'searches': t.get('searches', 0)
-                }
-                for t in most_searched
-            ]
-        )
-        
-    except Exception as e:
-        logger.error(f"Error getting statistics: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to get statistics: {str(e)}"
-        )
+        if dept:
+            by_department[dept] = by_department.get(dept, 0) + 1
+        if opt:
+            by_option[opt] = by_option.get(opt, 0) + 1
+        if year:
+            # Ensure year is treated as int key if possible
+            try:
+                by_year[int(year)] = by_year.get(int(year), 0) + 1
+            except (ValueError, TypeError):
+                pass # Ignore if year is not a valid integer
+                
+    return models.TopicStatsResponse(
+        total_topics=total_topics,
+        by_department=by_department,
+        by_option=by_option,
+        by_year=by_year
+    )
 
+# ==========================
+# AI-POWERED ENDPOINTS
+# ==========================
+@router.post("/ai/suggest", response_model=models.TopicSuggestionResponse)
+async def suggest_topics(request: models.TopicSuggestionRequest):
+    """Generate AI-powered topic suggestions."""
+    # NOTE: Assuming TopicIntelligenceService methods are synchronous and need wrapping.
+    # ✅ FIX: Wrap blocking suggest_topics call
+    suggest_func = topic_ai.suggest_topics
+    suggestions = await asyncio.to_thread(
+        suggest_func,
+        category=request.option,
+        department=request.department,
+        count=request.count,
+        keywords=request.keywords
+    )
+    return models.TopicSuggestionResponse(suggestions=suggestions)
 
-@router.get("/categories/list")
-async def list_categories():
-    """
-    Get list of all unique categories.
+@router.post("/ai/improve", response_model=models.TopicImproveResponse)
+async def improve_topic(request: models.TopicImproveRequest):
+    """Improve an existing topic using AI."""
+    # ✅ FIX: Wrap blocking improve_topic call
+    improve_func = topic_ai.improve_topic
+    result = await asyncio.to_thread(
+        improve_func,
+        title=request.title,
+        description=request.description,
+        category=request.option
+    )
+    return models.TopicImproveResponse(
+        improved_title=result.get('improved_title', request.title),
+        improved_description=result.get('improved_description', request.description),
+        suggested_keywords=result.get('suggested_tags', []),
+        suggested_status=result.get('suggested_difficulty', 'reserved')
+    )
+
+@router.post("/ai/similarity", response_model=models.TopicSimilarityResponse)
+async def check_similarity(request: models.TopicSimilarityRequest):
+    """Check semantic similarity of a topic."""
+    # ✅ FIX: Wrap blocking check_similarity call
+    similarity_func = topic_ai.check_similarity
+    similar = await asyncio.to_thread(
+        similarity_func,
+        title=request.title,
+        category=request.option,
+        threshold=request.threshold
+    )
     
-    Returns:
-        JSON response with list of category names
-    """
-    try:
-        services = get_services()
-        logger.info("Listing categories")
-        
-        categories = services['topics'].get_unique_categories()
-        
-        return JSONResponse(content={
-            'categories': categories,
-            'total': len(categories)
-        })
-        
-    except Exception as e:
-        logger.error(f"Error listing categories: {str(e)}")
-        raise HTTPException(
-            status_code=500,
-            detail=f"Failed to list categories: {str(e)}"
-        )
+    # The result 'similar' is assumed to be the list of similar topics as required by the model.
+    return models.TopicSimilarityResponse(similar_topics=similar)
+

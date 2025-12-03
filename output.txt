@@ -1,0 +1,17 @@
+The endpoint `http://127.0.0.1:8000/api/search` is a POST endpoint, which means it expects data to be sent in the request body. You cannot simply open this URL in a browser or use a `curl` command without specifying the method and the data.
+
+Please try testing it with the following `curl` command:
+
+```bash
+curl -X POST "http://127.0.0.1:8000/api/search" \
+     -H "Content-Type: application/json" \
+     -d '{"query": "lecture hall"}'
+```
+
+This command specifies:
+*   `-X POST`: That it's a POST request.
+*   `"http://127.0.0.1:8000/api/search"`: The correct URL.
+*   `-H "Content-Type: application/json"`: That you are sending JSON data.
+*   `-d '{"query": "lecture hall"}'`: The JSON data containing the search query.
+
+Alternatively, you can use the interactive API documentation at [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs). Navigate to the `/api/search` endpoint, click 'Try it out', enter `{"query": "lecture hall"}` in the Request Body, and click 'Execute'.

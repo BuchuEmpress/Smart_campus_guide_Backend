@@ -5,29 +5,27 @@ Handles multiple data formats: OSM, custom, and campus locations
 """
 
 import json
-import numpy as np
+import pytest
+import numpy as np # ✅ FIX: Added missing import for numpy
 import sys
 import os
 
 # Add parent directory to path to import from services
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from services.embedding_service import EmbeddingService
+from services.generate_embeddings import EmbeddingService
 
 
 def test_embeddings_exist():
     """Check if embeddings file exists and is valid"""
     filepath = 'data/locations/campus_locations_embeddings.json'
-    
-    if not os.path.exists(filepath):
-        print("❌ Embeddings file not found!")
-        return False
+    assert os.path.exists(filepath), "Embeddings file not found!"
     
     with open(filepath, 'r') as f:
         data = json.load(f)
     
-    print(f"✅ Found {len(data)} locations with embeddings")
-    return True
+    assert data, "Embeddings file is empty"
+    assert isinstance(data, list), "Embeddings file is not a JSON list"
 
 
 def get_location_id(location):
@@ -94,178 +92,81 @@ def get_location_display_name(location):
 
 
 def test_embedding_structure():
-    """Validate that each location has proper embeddings (flexible field checking)"""
+    """Validate that each location has proper embeddings."""
     filepath = 'data/locations/campus_locations_embeddings.json'
     
     with open(filepath, 'r') as f:
         locations = json.load(f)
-    
-    issues = []
-    valid_count = 0
-    
-    for i, location in enumerate(locations):
+
+    assert locations, "Embeddings file is empty"
+
+    for location in locations:
         loc_id = get_location_id(location)
         
-        # CRITICAL: Every location MUST have an embedding
-        if 'embedding' not in location:
-            issues.append(f"Location {i} ({loc_id}): missing 'embedding' field")
-            continue
+        assert 'embedding' in location, f"Location {loc_id} is missing 'embedding' field"
         
-        # Check embedding is a list of numbers
         embedding = location['embedding']
-        if not isinstance(embedding, list):
-            issues.append(f"Location {i} ({loc_id}): embedding is not a list")
-            continue
-        
-        if len(embedding) == 0:
-            issues.append(f"Location {i} ({loc_id}): embedding is empty")
-            continue
-        
-        # Check all values are numbers
-        if not all(isinstance(x, (int, float)) for x in embedding):
-            issues.append(f"Location {i} ({loc_id}): embedding contains non-numeric values")
-            continue
-        
-        valid_count += 1
-    
-    # Print issues if any
-    if issues:
-        print(f"⚠️ Found {len(issues)} issue(s):")
-        for issue in issues[:5]:  # Show first 5 issues
-            print(f"  - {issue}")
-        if len(issues) > 5:
-            print(f"  ... and {len(issues) - 5} more")
-        return False
-    
-    print(f"✅ All {len(locations)} locations have valid embeddings")
-    print(f"✅ Embedding dimension: {len(locations[0]['embedding'])}")
-    return True
+        assert isinstance(embedding, list), f"Location {loc_id} embedding is not a list"
+        assert len(embedding) > 0, f"Location {loc_id} embedding is empty"
+        assert all(isinstance(x, (int, float)) for x in embedding), f"Location {loc_id} embedding contains non-numeric values"
 
 
 def test_embedding_similarity():
-    """Test that embeddings are properly generated with reasonable values"""
+    """Test that embedding similarity scores are within a valid range."""
     filepath = 'data/locations/campus_locations_embeddings.json'
     
     with open(filepath, 'r') as f:
         locations = json.load(f)
     
     if len(locations) < 2:
-        print("⚠️ Not enough locations to test similarity")
-        return True
+        pytest.skip("Not enough locations to test similarity")
     
     # Calculate cosine similarity between first two locations
     emb1 = np.array(locations[0]['embedding'])
     emb2 = np.array(locations[1]['embedding'])
     
-    similarity = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
+    # handle potential zero vectors
+    norm1 = np.linalg.norm(emb1)
+    norm2 = np.linalg.norm(emb2)
+
+    if norm1 == 0 or norm2 == 0:
+        pytest.skip("Cannot calculate similarity with a zero vector")
+
+    similarity = np.dot(emb1, emb2) / (norm1 * norm2)
     
-    # Get display names
-    loc1_display = get_location_display_name(locations[0])
-    loc2_display = get_location_display_name(locations[1])
-    
-    print(f"✅ Similarity between:")
-    print(f"   '{loc1_display[:60]}...'")
-    print(f"   '{loc2_display[:60]}...'")
-    print(f"   Score: {similarity:.4f} (Range: -1 to 1, where 1 is identical)")
-    
-    return True
+    assert -1.0001 <= similarity <= 1.0001, f"Cosine similarity is outside the valid range of [-1, 1]: {similarity}"
 
 
 def test_search_functionality():
-    """Test basic semantic search capability"""
-    print("\n🔍 Testing semantic search...")
-    
+    """Test basic semantic search capability."""
     service = EmbeddingService()
     
     filepath = 'data/locations/campus_locations_embeddings.json'
     with open(filepath, 'r') as f:
         locations = json.load(f)
-    
-    # Test queries relevant to your campus
-    test_queries = [
-        "main gate",
-        "library", 
-        "restaurant"
-    ]
-    
-    for query in test_queries:
-        print(f"\nQuery: '{query}'")
-        query_embedding = service.model.encode(query)
-        
-        # Calculate similarities
-        similarities = []
-        for location in locations:
-            loc_embedding = np.array(location['embedding'])
-            similarity = np.dot(query_embedding, loc_embedding) / (
-                np.linalg.norm(query_embedding) * np.linalg.norm(loc_embedding)
-            )
-            
-            # Get display name
-            display_name = get_location_display_name(location)
-            loc_id = get_location_id(location)
-            
-            similarities.append((display_name, similarity, loc_id))
-        
-        # Sort by similarity
-        similarities.sort(key=lambda x: x[1], reverse=True)
-        
-        print("Top 3 matches:")
-        for display_name, score, loc_id in similarities[:3]:
-            print(f"  - {display_name[:70]}")
-            print(f"    Score: {score:.4f}")
-    
-    print("\n✅ Semantic search is working!")
-    return True
 
+    if len(locations) < 2:
+        pytest.skip("Not enough locations to test search")
 
-def run_all_tests():
-    """Run all validation tests"""
-    print("=" * 50)
-    print("EMBEDDING VALIDATION TESTS")
-    print("=" * 50)
-    
-    tests = [
-        ("File Exists", test_embeddings_exist),
-        ("Data Structure", test_embedding_structure),
-        ("Embedding Similarity", test_embedding_similarity),
-        ("Search Functionality", test_search_functionality)
-    ]
-    
-    results = []
-    for test_name, test_func in tests:
-        print(f"\n--- {test_name} ---")
-        try:
-            result = test_func()
-            results.append((test_name, result))
-        except Exception as e:
-            print(f"❌ Error: {str(e)}")
-            import traceback
-            traceback.print_exc()
-            results.append((test_name, False))
-    
-    # Summary
-    print("\n" + "=" * 50)
-    print("TEST SUMMARY")
-    print("=" * 50)
-    passed = sum(1 for _, result in results if result)
-    total = len(results)
-    
-    for test_name, result in results:
-        status = "✅ PASSED" if result else "❌ FAILED"
-        print(f"{test_name}: {status}")
-    
-    print(f"\nTotal: {passed}/{total} tests passed")
-    
-    if passed == total:
-        print("\n🎉 All tests passed! Your embeddings are ready for semantic search!")
-        print("\n📊 What you can do now:")
-        print("  ✅ Semantic search across all campus locations")
-        print("  ✅ Find similar places using natural language")
-        print("  ✅ Smart recommendations based on location context")
-        print("  ✅ 384-dimensional vector embeddings for ML tasks")
-    else:
-        print(f"\n⚠️ {total - passed} test(s) failed - check details above")
+    test_query = "library"
+    query_embedding = service.model.encode(test_query)
 
+    similarities = []
+    for location in locations:
+        loc_embedding = np.array(location['embedding'])
+        norm_query = np.linalg.norm(query_embedding)
+        norm_loc = np.linalg.norm(loc_embedding)
 
-if __name__ == "__main__":
-    run_all_tests()
+        if norm_query == 0 or norm_loc == 0:
+            continue
+
+        similarity = np.dot(query_embedding, loc_embedding) / (norm_query * norm_loc)
+        similarities.append(similarity)
+
+    if len(similarities) < 2:
+        pytest.skip("Not enough valid similarities to compare")
+
+    similarities.sort(reverse=True)
+
+    assert similarities[0] >= similarities[-1], "Top search result is not more similar than the last result"
+

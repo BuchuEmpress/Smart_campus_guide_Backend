@@ -13,6 +13,7 @@ Features:
 """
 
 import logging
+import hashlib # ✅ FIXED: Moved import to the top
 from typing import Dict, List, Optional
 from datetime import datetime
 from bson import ObjectId
@@ -48,7 +49,7 @@ class TopicService:
         try:
             # Generate topic_id if not provided
             if 'topic_id' not in topic_data or not topic_data['topic_id']:
-                import hashlib
+                # hashlib is now imported at the top of the file
                 timestamp = int(datetime.utcnow().timestamp())
                 title_hash = hashlib.md5(topic_data['title'].encode()).hexdigest()[:8]
                 topic_data['topic_id'] = f"topic_{timestamp}_{title_hash}"
@@ -177,6 +178,9 @@ class TopicService:
         """
         Check if a topic with similar title already exists.
         
+        NOTE: This performs a strict title check. For semantic similarity, 
+        TopicIntelligenceService should be used.
+        
         Args:
             title: Topic title to check
             category: Optional category filter
@@ -187,8 +191,8 @@ class TopicService:
         try:
             collection = self.mongo.db['topics']
             
-            # Build query
-            query = {'title': {'$regex': f'^{title}$', '$options': 'i'}}
+            # Build query - Case-insensitive partial match
+            query = {'title': {'$regex': title, '$options': 'i'}}
             
             if category:
                 query['category'] = category
@@ -196,7 +200,7 @@ class TopicService:
             existing = collection.find_one(query)
             
             if existing:
-                logger.info(f"Duplicate found for '{title}'")
+                logger.info(f"Possible duplicate found for '{title}' (Title match)")
             
             return existing
             

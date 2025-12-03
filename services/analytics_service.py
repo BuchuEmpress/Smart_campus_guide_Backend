@@ -8,6 +8,7 @@ This module tracks and analyzes user search behavior to:
 - Track search performance
 
 Every search query is logged here for analytics and offline cache generation.
+Uses the asynchronous MongoDBService for non-blocking database operations.
 
 """
 
@@ -15,9 +16,10 @@ import logging
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
 import time
+import uuid
 
 # Import our MongoDB service
-from services.mongodb_service import MongoDBService
+from services.mongodb_service import MongoDBService # Assuming this uses Motor/AsyncIO
 
 # Setup logging
 logging.basicConfig(
@@ -36,19 +38,11 @@ class AnalyticsService:
     
     Attributes:
         mongo: MongoDB service instance for database operations
-    
-    Example:
-        >>> analytics = AnalyticsService()
-        >>> await analytics.connect()
-        >>> await analytics.log_search(query="library", location_id="loc_123")
     """
     
     def __init__(self, mongo_service: Optional[MongoDBService] = None):
         """
         Initialize Analytics Service.
-        
-        Args:
-            mongo_service: Existing MongoDB service instance. If None, creates new one.
         """
         # Use provided MongoDB service or create new one
         self.mongo = mongo_service or MongoDBService()
@@ -58,12 +52,8 @@ class AnalyticsService:
     async def connect(self) -> bool:
         """
         Connect to MongoDB database.
-        
-        Returns:
-            True if connection successful, False otherwise
         """
         try:
-            # Connect to MongoDB
             connected = await self.mongo.connect()
             
             if connected:
@@ -100,32 +90,6 @@ class AnalyticsService:
         
         This is called EVERY TIME a user searches for a location.
         Critical for identifying popular locations for offline cache.
-        
-        Args:
-            query: The search query string user entered
-            location_id: ID of the location found (if any)
-            location_name: Name of the location found (if any)
-            location_type: Type of location (building, landmark, etc.)
-            is_on_campus: Whether location is on campus
-            user_location: User's GPS location as {'lat': float, 'lon': float}
-            response_time_ms: How long the search took in milliseconds
-            search_source: Where the result came from ('qdrant', 'google_maps', 'cache')
-            session_id: User's session ID for tracking user journeys
-            success: Whether the search was successful
-        
-        Returns:
-            True if logged successfully, False otherwise
-        
-        Example:
-            >>> await analytics.log_search(
-            ...     query="library",
-            ...     location_id="loc_123",
-            ...     location_name="University Library",
-            ...     location_type="building",
-            ...     is_on_campus=True,
-            ...     search_source="qdrant",
-            ...     success=True
-            ... )
         """
         try:
             # Build search data dictionary
@@ -143,10 +107,8 @@ class AnalyticsService:
                 'timestamp': datetime.utcnow()  # UTC timestamp
             }
             
-            # Log to MongoDB
-           # Log to MongoDB (synchronous)
-            collection = self.mongo.db['search_analytics']
-            collection.insert_one(search_data)
+            # FIX: Use the async analytics_collection and 'await'
+            await self.mongo.analytics_collection.insert_one(search_data) 
             
             logger.debug(f"Search logged: '{query}' → {location_name or 'not found'}")
             
@@ -163,61 +125,51 @@ class AnalyticsService:
     ) -> List[Dict]:
         """
         Get the most frequently searched locations.
-        
-        Args:
-            limit: Number of top locations to return
-            days: Only consider searches from last N days (None = all time)
-        
-        Returns:
-            List of popular locations with search counts
-            [
-                {
-                    'location_id': 'loc_123',
-                    'location_name': 'University Library',
-                    'location_type': 'building',
-                    'is_on_campus': True,
-                    'search_count': 156,
-                    'last_searched': datetime
-                },
-                ...
-            ]
-        
-        Example:
-            >>> # Get top 10 locations from last 7 days
-            >>> popular = await analytics.get_popular_locations(limit=10, days=7)
-            >>> for loc in popular:
-            ...     print(f"{loc['location_name']}: {loc['search_count']} searches")
         """
         try:
             logger.info(f"Getting top {limit} popular locations (last {days or 'all'} days)")
             
-            # If days specified, only get recent searches
+            pipeline_match = {}
+            # FIX: Implement date filtering 
             if days:
-                # Calculate cutoff date
                 cutoff_date = datetime.utcnow() - timedelta(days=days)
-                
-                # TODO: Add date filtering to MongoDB aggregation
-                # For now, use all-time data
-                logger.warning(f"Date filtering not yet implemented, using all-time data")
+                pipeline_match['timestamp'] = {'$gte': cutoff_date}
+                logger.info(f"Filtering data after: {cutoff_date}")
+            else:
+                 logger.info(f"Using all-time data for popular locations.")
+
+            # We must only match searches that were successful and returned a location.
+            pipeline_match['location_id'] = {'$exists': True, '$ne': None}
+
             
-            # Get popular locations from MongoDB
-           # Get popular locations from MongoDB (synchronous)
-            collection = self.mongo.db['search_analytics']
+            # Use the async analytics collection
+            collection = self.mongo.analytics_collection
             
             pipeline = [
-                {'$match': {'location_id': {'$exists': True, '$ne': None}}},
+                {'$match': pipeline_match}, # Apply the date filter and location filter
                 {'$group': {
                     '_id': '$location_id',
                     'location_name': {'$first': '$location_name'},
                     'location_type': {'$first': '$location_type'},
                     'is_on_campus': {'$first': '$is_on_campus'},
-                    'count': {'$sum': 1}
+                    'search_count': {'$sum': 1} # Changed 'count' to 'search_count' for clarity
                 }},
-                {'$sort': {'count': -1}},
-                {'$limit': limit}
+                {'$sort': {'search_count': -1}},
+                {'$limit': limit},
+                # Project the output to match the desired format
+                {'$project': {
+                    '_id': 0, 
+                    'location_id': '$_id', 
+                    'location_name': 1, 
+                    'location_type': 1, 
+                    'is_on_campus': 1, 
+                    'search_count': 1
+                }}
             ]
             
-            results = list(collection.aggregate(pipeline))
+            # FIX: Execute aggregation asynchronously
+            cursor = collection.aggregate(pipeline)
+            results = await cursor.to_list(length=limit)
             
             logger.info(f"Retrieved {len(results)} popular locations")
             
@@ -230,28 +182,11 @@ class AnalyticsService:
     async def get_search_statistics(self) -> Dict:
         """
         Get overall search statistics.
-        
-        Returns:
-            Dictionary with statistics:
-            {
-                'total_searches': int,
-                'successful_searches': int,
-                'failed_searches': int,
-                'success_rate': float,
-                'avg_response_time_ms': float,
-                'top_search_sources': Dict,
-                'searches_today': int,
-                'searches_this_week': int
-            }
-        
-        Example:
-            >>> stats = await analytics.get_search_statistics()
-            >>> print(f"Success rate: {stats['success_rate']}%")
         """
         try:
             logger.info("Calculating search statistics")
             
-            # Get analytics collection
+            # FIX: Use the async analytics collection
             collection = self.mongo.analytics_collection
             
             # Total searches
@@ -267,7 +202,6 @@ class AnalyticsService:
             success_rate = (successful / total_searches * 100) if total_searches > 0 else 0
             
             # Average response time
-            # Aggregation pipeline to calculate average
             pipeline = [
                 {'$match': {'response_time_ms': {'$exists': True, '$ne': None}}},
                 {'$group': {
@@ -276,6 +210,7 @@ class AnalyticsService:
                 }}
             ]
             
+            # FIX: Execute aggregation asynchronously
             cursor = collection.aggregate(pipeline)
             result = await cursor.to_list(length=1)
             avg_response_time = result[0]['avg_response_time'] if result else 0
@@ -289,6 +224,7 @@ class AnalyticsService:
                 {'$sort': {'count': -1}}
             ]
             
+            # FIX: Execute aggregation asynchronously
             cursor_sources = collection.aggregate(pipeline_sources)
             sources = await cursor_sources.to_list(length=None)
             top_sources = {item['_id']: item['count'] for item in sources}
@@ -339,25 +275,7 @@ class AnalyticsService:
         """
         Get trending search queries (most searched in recent days).
         
-        Args:
-            limit: Number of trending queries to return
-            days: Consider searches from last N days
-        
-        Returns:
-            List of trending queries with counts
-            [
-                {
-                    'query': 'library',
-                    'count': 45,
-                    'growth': 25.5  # Percentage increase from previous period
-                },
-                ...
-            ]
-        
-        Example:
-            >>> trending = await analytics.get_trending_queries(limit=5, days=7)
-            >>> for item in trending:
-            ...     print(f"{item['query']}: {item['count']} searches (↑{item['growth']}%)")
+        Note: The 'growth' calculation is marked as a future TODO.
         """
         try:
             logger.info(f"Getting top {limit} trending queries from last {days} days")
@@ -367,10 +285,10 @@ class AnalyticsService:
             
             # Aggregation pipeline to count queries
             pipeline = [
-                # Only recent searches
+                # Only recent and successful searches
                 {'$match': {
                     'timestamp': {'$gte': cutoff_date},
-                    'success': True  # Only successful searches
+                    'success': True 
                 }},
                 
                 # Group by query and count
@@ -386,7 +304,10 @@ class AnalyticsService:
                 {'$limit': limit}
             ]
             
+            # FIX: Use the async analytics collection
             collection = self.mongo.analytics_collection
+            
+            # FIX: Execute aggregation asynchronously
             cursor = collection.aggregate(pipeline)
             results = await cursor.to_list(length=limit)
             
@@ -411,17 +332,8 @@ class AnalyticsService:
     def create_session_id(self) -> str:
         """
         Create a unique session ID for tracking user journeys.
-        
-        Returns:
-            Unique session ID string
-        
-        Example:
-            >>> session = analytics.create_session_id()
-            >>> print(session)
-            "session_1732467890_abc123"
         """
         # Generate session ID using timestamp + random component
-        import uuid
         timestamp = int(time.time())
         unique_id = str(uuid.uuid4())[:8]
         
@@ -478,10 +390,14 @@ if __name__ == "__main__":
             print("\nTest 2: Popular Locations")
             print("-" * 70)
             
+            # Log a few more for testing the count logic
+            await analytics.log_search(query="library", location_id="loc_123", location_name="University Library", success=True)
+            await analytics.log_search(query="gate", location_id="loc_456", location_name="Main Gate", success=True)
+            
             popular = await analytics.get_popular_locations(limit=5)
             print(f"Top {len(popular)} popular locations:")
             for i, loc in enumerate(popular, 1):
-                print(f"{i}. {loc.get('location_name', 'Unknown')}: {loc.get('count', 0)} searches")
+                print(f"{i}. {loc.get('location_name', 'Unknown')}: {loc.get('search_count', 0)} searches")
             
             # Test 3: Get statistics
             print("\nTest 3: Search Statistics")
@@ -506,7 +422,7 @@ if __name__ == "__main__":
             await analytics.disconnect()
             
             print("\n" + "=" * 70)
-            print("✅ All tests completed!")
+            print("✅ All tests completed! The service is now fully asynchronous.")
             print("=" * 70)
             
         except Exception as e:
