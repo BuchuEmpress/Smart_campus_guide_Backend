@@ -17,7 +17,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 # 🚀 ENVIRONMENT SETUP (Mock Env Vars BEFORE App Import)
 # =======================================================================
 os.environ["GEMINI_API_KEY"] = "test_gemini_key"
-os.environ["QDRANT_URL"] = "http://localhost:6333"
+os.environ["QDRANT_HOST"] = "http://localhost:6333"
 os.environ["QDRANT_API_KEY"] = "test_qdrant_key"
 os.environ["GOOGLE_MAPS_API_KEY"] = "test_maps_key"
 os.environ["MONGODB_URI"] = "mongodb://localhost:27017"

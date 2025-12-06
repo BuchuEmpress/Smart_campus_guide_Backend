@@ -13,6 +13,7 @@ __pycache__/
 # Data Files - Ignore specific sensitive files
 data/locations/campus_locations.json
 data/locations/campus_locations_embeddings.json
+data/topics/computer_engineering.json
 
 # Ignore topic data but keep templates
 data/topics/*.json

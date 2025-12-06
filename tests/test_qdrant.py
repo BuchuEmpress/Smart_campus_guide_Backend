@@ -21,7 +21,7 @@ from qdrant_client.models import PointStruct, Distance
 def qdrant_service(mock_qdrant_client, qdrant_test_data):
     """Create a QdrantService instance with a mocked client."""
     with patch('sentence_transformers.SentenceTransformer'):
-        with patch.dict('os.environ', {'QDRANT_URL': 'http://test:6333', 'QDRANT_API_KEY': 'test_key'}):
+        with patch.dict('os.environ', {'QDRANT_HOST': 'http://test:6333', 'QDRANT_API_KEY': 'test_key'}):
             service = QdrantService()
             service.client = mock_qdrant_client 
             service.collection_name = "test_collection"
