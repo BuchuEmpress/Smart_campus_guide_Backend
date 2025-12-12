@@ -15,7 +15,6 @@ from fastapi import APIRouter, HTTPException, Query, Path, Body
 
 from api.models import topics_models as models
 from services.topic_service import TopicService
-from services.mongodb_service import MongoDBService
 from services.topic_intelligence_service import TopicIntelligenceService
 
 # Setup logging
@@ -25,11 +24,51 @@ logger = logging.getLogger(__name__)
 # Initialize router
 router = APIRouter(prefix="/api/topics", tags=["Topics"])
 
-# Initialize services (assumed to be synchronous)
-mongodb_service = MongoDBService()
-topic_service = TopicService(mongodb_service)
+# Initialize services
+# TopicService creates its own synchronous MongoDB connection internally
+topic_service = TopicService()
 # Note: TopicIntelligenceService relies on TopicService, which is blocking.
 topic_ai = TopicIntelligenceService(topic_service=topic_service)
+
+# ==========================
+# HELPER FUNCTIONS
+# ==========================
+async def sync_topic_to_qdrant(topic: Dict):
+    """Helper to sync a single topic to Qdrant."""
+    try:
+        from services.qdrant_service import QdrantService
+        import uuid
+        
+        # Initialize service (lazy load model)
+        qdrant_service = QdrantService(collection_name="topics")
+        
+        # Prepare payload
+        t_id = topic.get('topic_id')
+        if not t_id:
+            return
+            
+        # Generate deterministic UUID from topic_id
+        point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(t_id)))
+        
+        text = f"{topic.get('title', '')}. {topic.get('description', '')}. Tags: {', '.join(topic.get('tags', []))}"
+        
+        payload = {
+            "id": point_id,
+            "name": text,
+            "topic_id": t_id,
+            "title": topic.get('title'),
+            "department": topic.get('department'),
+            "option": topic.get('option'),
+            "year": topic.get('year'),
+            "status": topic.get('status')
+        }
+        
+        # Upload (wrap in list)
+        await qdrant_service.upload_points([payload])
+        logger.info(f"Synced topic {t_id} to Qdrant")
+        
+    except Exception as e:
+        logger.error(f"Failed to sync topic to Qdrant: {e}")
 
 # ==========================
 # CRUD ENDPOINTS
@@ -61,7 +100,10 @@ async def create_topic(request: models.TopicCreateRequest):
         get_topic = topic_service.get_topic_by_id
         topic = await asyncio.to_thread(get_topic, topic_id)
         
-        return models.TopicResponse(**topic, topic_id=str(topic_id))
+        # Sync to Qdrant (Async)
+        await sync_topic_to_qdrant(topic)
+        
+        return models.TopicResponse(**topic)
     
     except HTTPException:
         raise
@@ -83,9 +125,9 @@ async def list_topics(
     
     # ✅ FIX: Wrap blocking list_topics call
     list_func = topic_service.list_topics
-    topics = await asyncio.to_thread(list_func, filters=clean_filters)
+    topics = await asyncio.to_thread(list_func, filter_query=clean_filters)
     
-    return [models.TopicResponse(**t, topic_id=str(t['_id'])) for t in topics]
+    return [models.TopicResponse(**t) for t in topics]
 
 @router.get("/{topic_id}", response_model=models.TopicResponse)
 async def get_topic(topic_id: str = Path(...)):
@@ -96,7 +138,7 @@ async def get_topic(topic_id: str = Path(...)):
     
     if not topic:
         raise HTTPException(status_code=404, detail="Topic not found")
-    return models.TopicResponse(**topic, topic_id=str(topic_id))
+    return models.TopicResponse(**topic)
 
 @router.put("/{topic_id}", response_model=models.TopicResponse)
 async def update_topic(topic_id: str, request: models.TopicUpdateRequest = Body(...)):
@@ -113,7 +155,10 @@ async def update_topic(topic_id: str, request: models.TopicUpdateRequest = Body(
         # Should ideally not happen if update succeeded, but good practice
         raise HTTPException(status_code=404, detail="Topic not found after update") 
         
-    return models.TopicResponse(**topic, topic_id=str(topic_id))
+    # Sync to Qdrant (Async)
+    await sync_topic_to_qdrant(topic)
+        
+    return models.TopicResponse(**topic)
 
 @router.delete("/{topic_id}", status_code=204)
 async def delete_topic(topic_id: str):
@@ -129,20 +174,81 @@ async def delete_topic(topic_id: str):
 @router.post("/search", response_model=models.TopicSearchResponse)
 async def search_topics(request: models.TopicSearchRequest):
     """Search topics with filters."""
-    # ✅ FIX: Wrap blocking search_topics call
+    # 1. Search MongoDB
     search_func = topic_service.search_topics
-    results = await asyncio.to_thread(
+    mongo_results = await asyncio.to_thread(
         search_func,
         query=request.query,
         department=request.department,
         option=request.option,
         year=request.year,
+        status=request.status,
         limit=request.limit
     )
+    logger.info(f"MongoDB search found {len(mongo_results)} results")
+    
+    # 2. Search Vector DB (if query provided)
+    qdrant_results = []
+    if request.query:
+        try:
+            # Initialize Qdrant for topics
+            # Note: This assumes 'topics' collection exists or will be created.
+            # Ideally, this service should be initialized once at module level, 
+            # but we do it here to avoid circular imports or startup issues if Qdrant is down.
+            from services.qdrant_service import QdrantService
+            qdrant_service = QdrantService(collection_name="topics")
+            
+            # Search
+            qdrant_hits = await qdrant_service.search(
+                query=request.query,
+                limit=request.limit
+            )
+            
+            # Extract IDs from Qdrant hits
+            qdrant_ids = []
+            for hit in qdrant_hits:
+                # Qdrant payload might have 'id' or '_id' or 'topic_id'
+                q_id = hit.get('topic_id') or hit.get('id') or hit.get('_id')
+                if q_id:
+                    qdrant_ids.append(str(q_id))
+            
+            # Fetch full topics from MongoDB for these IDs
+            if qdrant_ids:
+                # ✅ FIX: Wrap blocking list_topics call
+                list_func = topic_service.list_topics
+                qdrant_results = await asyncio.to_thread(
+                    list_func,
+                    filter_query={'topic_id': {'$in': qdrant_ids}},
+                    limit=len(qdrant_ids)
+                )
+            
+        except Exception as e:
+            logger.warning(f"Vector search failed: {e}")
+            # Continue with just MongoDB results
+    
+    # 3. Merge Results (Deduplicate by topic_id)
+    # Use a dictionary keyed by topic_id to merge
+    merged_map = {}
+    
+    # Add MongoDB results first
+    for t in mongo_results:
+        t_id = str(t.get('topic_id') or t.get('_id'))
+        merged_map[t_id] = t
+        
+    # Add Qdrant results (if not already present)
+    for t in qdrant_results:
+        t_id = str(t.get('topic_id') or t.get('_id'))
+        if t_id not in merged_map:
+            merged_map[t_id] = t
+            
+    merged_results = list(merged_map.values())
+            
+    logger.info(f"Final merged results count: {len(merged_results)}")
+    
     return models.TopicSearchResponse(
         query=request.query,
-        total_results=len(results),
-        topics=[models.TopicResponse(**t, topic_id=str(t['_id'])) for t in results],
+        total_results=len(merged_results),
+        topics=[models.TopicResponse(**t) for t in merged_results],
         filters_applied=request.dict(exclude_none=True)
     )
 
@@ -152,37 +258,15 @@ async def search_topics(request: models.TopicSearchRequest):
 @router.get("/stats/overview", response_model=models.TopicStatsResponse)
 async def get_topic_statistics():
     """Get topic statistics."""
-    # ✅ FIX: Wrap blocking list_topics call
-    list_func = topic_service.list_topics
-    all_topics = await asyncio.to_thread(list_func)
+    stats_func = topic_service.get_statistics
+    stats = await asyncio.to_thread(stats_func)
     
-    total_topics = len(all_topics)
-    by_department: Dict[str, int] = {}
-    by_option: Dict[str, int] = {}
-    by_year: Dict[int, int] = {}
-    
-    for t in all_topics:
-        # Use .get() with default values to handle missing keys gracefully
-        dept = t.get('department')
-        opt = t.get('option')
-        year = t.get('year')
-        
-        if dept:
-            by_department[dept] = by_department.get(dept, 0) + 1
-        if opt:
-            by_option[opt] = by_option.get(opt, 0) + 1
-        if year:
-            # Ensure year is treated as int key if possible
-            try:
-                by_year[int(year)] = by_year.get(int(year), 0) + 1
-            except (ValueError, TypeError):
-                pass # Ignore if year is not a valid integer
-                
     return models.TopicStatsResponse(
-        total_topics=total_topics,
-        by_department=by_department,
-        by_option=by_option,
-        by_year=by_year
+        total_topics=stats.get('total_topics', 0),
+        by_department=stats.get('by_department', {}),
+        by_option=stats.get('by_option', {}),
+        by_year=stats.get('by_year', {}),
+        by_status=stats.get('by_status', {})
     )
 
 # ==========================
@@ -199,7 +283,8 @@ async def suggest_topics(request: models.TopicSuggestionRequest):
         category=request.option,
         department=request.department,
         count=request.count,
-        keywords=request.keywords
+        keywords=request.keywords,
+        user_request=request.user_request
     )
     return models.TopicSuggestionResponse(suggestions=suggestions)
 
@@ -212,7 +297,8 @@ async def improve_topic(request: models.TopicImproveRequest):
         improve_func,
         title=request.title,
         description=request.description,
-        category=request.option
+        category=request.option,
+        user_instruction=request.user_instruction
     )
     return models.TopicImproveResponse(
         improved_title=result.get('improved_title', request.title),

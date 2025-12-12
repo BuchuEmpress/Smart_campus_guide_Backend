@@ -12,8 +12,9 @@ Features:
 - Get statistics
 """
 
+import os
 import logging
-import hashlib # ✅ FIXED: Moved import to the top
+import hashlib
 from typing import Dict, List, Optional
 from datetime import datetime
 from bson import ObjectId
@@ -32,8 +33,31 @@ class TopicService:
     """
     
     def __init__(self, mongo_service: Optional[MongoDBService] = None):
-        """Initialize Topic Service."""
-        self.mongo = mongo_service or MongoDBService()
+        """Initialize Topic Service with sync MongoDB."""
+        if mongo_service and hasattr(mongo_service, 'db') and mongo_service.db:
+            self.mongo = mongo_service
+        else:
+            from pymongo import MongoClient
+            from dotenv import load_dotenv
+            load_dotenv()
+            
+            uri = os.getenv('MONGODB_URI')
+            if not uri:
+                logger.warning("MONGODB_URI not set")
+                self.mongo = type('obj', (object,), {'db': None})()
+                return
+            
+            try:
+                client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+                client.admin.command('ping')
+                self.mongo = type('obj', (object,), {
+                    'db': client['smart_campus_db'],
+                    'client': client
+                })()
+                logger.info("✅ MongoDB connected")
+            except Exception as e:
+                logger.error(f"MongoDB failed: {e}")
+                self.mongo = type('obj', (object,), {'db': None})()
         logger.info("Topic service initialized")
     
     def add_topic(self, topic_data: Dict) -> Optional[str]:
@@ -49,7 +73,6 @@ class TopicService:
         try:
             # Generate topic_id if not provided
             if 'topic_id' not in topic_data or not topic_data['topic_id']:
-                # hashlib is now imported at the top of the file
                 timestamp = int(datetime.utcnow().timestamp())
                 title_hash = hashlib.md5(topic_data['title'].encode()).hexdigest()[:8]
                 topic_data['topic_id'] = f"topic_{timestamp}_{title_hash}"
@@ -69,7 +92,7 @@ class TopicService:
             result = collection.insert_one(topic_data)
             
             logger.info(f"Topic added: {topic_data['title']} (ID: {result.inserted_id})")
-            return str(result.inserted_id)
+            return topic_data['topic_id']
             
         except Exception as e:
             logger.error(f"Error adding topic: {str(e)}")
@@ -77,17 +100,18 @@ class TopicService:
     
     def get_topic_by_id(self, topic_id: str) -> Optional[Dict]:
         """
-        Get a specific topic by its MongoDB ObjectId.
+        Get a specific topic by its custom topic_id.
         
         Args:
-            topic_id: MongoDB ObjectId as string
+            topic_id: Custom topic ID string
         
         Returns:
             Topic dictionary if found, None otherwise
         """
         try:
             collection = self.mongo.db['topics']
-            topic = collection.find_one({'_id': ObjectId(topic_id)})
+            # Query by custom topic_id, not _id
+            topic = collection.find_one({'topic_id': topic_id})
             return topic
         except Exception as e:
             logger.error(f"Error getting topic {topic_id}: {str(e)}")
@@ -108,13 +132,18 @@ class TopicService:
             skip: Number to skip (pagination)
         
         Returns:
-            List of topic dictionaries
+            List of topics
         """
         try:
             collection = self.mongo.db['topics']
             query = filter_query or {}
             
-            cursor = collection.find(query).skip(skip).limit(limit).sort('created_at', -1)
+            # Convert string year to int if present in query
+            if 'year' in query and isinstance(query['year'], str):
+                if query['year'].isdigit():
+                    query['year'] = int(query['year'])
+
+            cursor = collection.find(query).skip(skip).limit(limit)
             topics = list(cursor)
             
             logger.info(f"Retrieved {len(topics)} topics")
@@ -126,9 +155,11 @@ class TopicService:
     
     def search_topics(
         self,
-        query: str,
-        category: Optional[str] = None,
-        difficulty: Optional[str] = None,
+        query: Optional[str] = None,
+        department: Optional[str] = None,
+        option: Optional[str] = None,
+        year: Optional[int] = None,
+        status: Optional[str] = None,
         limit: int = 20
     ) -> List[Dict]:
         """
@@ -136,8 +167,10 @@ class TopicService:
         
         Args:
             query: Search query
-            category: Filter by category
-            difficulty: Filter by difficulty
+            department: Filter by department
+            option: Filter by option
+            year: Filter by year
+            status: Filter by status
             limit: Maximum results
         
         Returns:
@@ -147,24 +180,21 @@ class TopicService:
             collection = self.mongo.db['topics']
             
             # Build search filter
-            search_filter = {
-                '$or': [
-                    {'title': {'$regex': query, '$options': 'i'}},
-                    {'description': {'$regex': query, '$options': 'i'}},
-                    {'tags': {'$regex': query, '$options': 'i'}}
-                ]
-            }
+            search_filter = {}
             
-            # Add category filter
-            if category:
-                search_filter['category'] = category
+            if query:
+                search_filter['title'] = {'$regex': query, '$options': 'i'}
             
-            # Add difficulty filter
-            if difficulty:
-                search_filter['difficulty'] = difficulty
-            
-            # Execute search
-            cursor = collection.find(search_filter).limit(limit).sort('searches', -1)
+            if department:
+                search_filter['department'] = department
+            if option:
+                search_filter['option'] = option
+            if year:
+                search_filter['year'] = year
+            if status:
+                search_filter['status'] = status
+                
+            cursor = collection.find(search_filter).limit(limit)
             results = list(cursor)
             
             logger.info(f"Search '{query}' found {len(results)} topics")
@@ -183,7 +213,7 @@ class TopicService:
         
         Args:
             title: Topic title to check
-            category: Optional category filter
+            category: Optional category filter (ignored, kept for compatibility)
         
         Returns:
             Existing topic if found, None otherwise
@@ -193,9 +223,6 @@ class TopicService:
             
             # Build query - Case-insensitive partial match
             query = {'title': {'$regex': title, '$options': 'i'}}
-            
-            if category:
-                query['category'] = category
             
             existing = collection.find_one(query)
             
@@ -207,13 +234,45 @@ class TopicService:
         except Exception as e:
             logger.error(f"Error checking duplicate: {str(e)}")
             return None
+
+    def find_duplicate(
+        self,
+        title: str,
+        department: str,
+        option: str,
+        year: int
+    ) -> Optional[Dict]:
+        """
+        Find exact duplicate topic.
+        
+        Args:
+            title: Topic title
+            department: Department
+            option: Option
+            year: Year
+            
+        Returns:
+            Duplicate topic if found
+        """
+        try:
+            collection = self.mongo.db['topics']
+            query = {
+                'title': title,
+                'department': department,
+                'option': option,
+                'year': year
+            }
+            return collection.find_one(query)
+        except Exception as e:
+            logger.error(f"Error finding duplicate: {str(e)}")
+            return None
     
     def update_topic(self, topic_id: str, update_data: Dict) -> bool:
         """
         Update an existing topic.
         
         Args:
-            topic_id: Topic MongoDB ObjectId
+            topic_id: Custom topic ID string
             update_data: Fields to update
         
         Returns:
@@ -226,7 +285,7 @@ class TopicService:
             update_data['updated_at'] = datetime.utcnow()
             
             result = collection.update_one(
-                {'_id': ObjectId(topic_id)},
+                {'topic_id': topic_id},
                 {'$set': update_data}
             )
             
@@ -246,7 +305,7 @@ class TopicService:
         Delete a topic.
         
         Args:
-            topic_id: Topic MongoDB ObjectId
+            topic_id: Custom topic ID string
         
         Returns:
             True if deleted, False otherwise
@@ -254,7 +313,7 @@ class TopicService:
         try:
             collection = self.mongo.db['topics']
             
-            result = collection.delete_one({'_id': ObjectId(topic_id)})
+            result = collection.delete_one({'topic_id': topic_id})
             
             if result.deleted_count > 0:
                 logger.info(f"Topic {topic_id} deleted")
@@ -272,7 +331,7 @@ class TopicService:
         Increment view count for a topic.
         
         Args:
-            topic_id: Topic MongoDB ObjectId
+            topic_id: Custom topic ID string
         
         Returns:
             True if successful
@@ -281,7 +340,7 @@ class TopicService:
             collection = self.mongo.db['topics']
             
             collection.update_one(
-                {'_id': ObjectId(topic_id)},
+                {'topic_id': topic_id},
                 {'$inc': {'views': 1}}
             )
             
@@ -297,7 +356,7 @@ class TopicService:
         Increment search count for a topic.
         
         Args:
-            topic_id: Topic MongoDB ObjectId
+            topic_id: Custom topic ID string
         
         Returns:
             True if successful
@@ -306,7 +365,7 @@ class TopicService:
             collection = self.mongo.db['topics']
             
             collection.update_one(
-                {'_id': ObjectId(topic_id)},
+                {'topic_id': topic_id},
                 {'$inc': {'searches': 1}}
             )
             
@@ -326,22 +385,17 @@ class TopicService:
         """
         try:
             collection = self.mongo.db['topics']
-            
-            categories = collection.distinct('category')
-            
-            logger.info(f"Found {len(categories)} unique categories")
-            return categories
+            # We don't have categories anymore, but keeping method for compatibility
+            # returning empty list or maybe departments?
+            return []
             
         except Exception as e:
             logger.error(f"Error getting categories: {str(e)}")
             return []
     
-    def get_statistics(self, category: Optional[str] = None) -> Dict:
+    def get_statistics(self) -> Dict:
         """
         Get topic statistics.
-        
-        Args:
-            category: Optional category filter
         
         Returns:
             Statistics dictionary
@@ -349,30 +403,30 @@ class TopicService:
         try:
             collection = self.mongo.db['topics']
             
-            # Build filter
-            query = {}
-            if category:
-                query['category'] = category
-            
             # Total count
-            total = collection.count_documents(query)
+            total = collection.count_documents({})
             
-            # By difficulty
+            # Aggregation for breakdowns
             pipeline = [
-                {'$match': query},
-                {'$group': {
-                    '_id': '$difficulty',
-                    'count': {'$sum': 1}
-                }}
+                {
+                    '$facet': {
+                        'by_status': [{'$group': {'_id': '$status', 'count': {'$sum': 1}}}],
+                        'by_department': [{'$group': {'_id': '$department', 'count': {'$sum': 1}}}],
+                        'by_option': [{'$group': {'_id': '$option', 'count': {'$sum': 1}}}],
+                        'by_year': [{'$group': {'_id': '$year', 'count': {'$sum': 1}}}]
+                    }
+                }
             ]
             
-            by_difficulty = {}
-            for result in collection.aggregate(pipeline):
-                by_difficulty[result['_id']] = result['count']
+            agg_result = list(collection.aggregate(pipeline))
+            result = agg_result[0] if agg_result else {}
             
             stats = {
                 'total_topics': total,
-                'by_difficulty': by_difficulty
+                'by_status': {item['_id']: item['count'] for item in result.get('by_status', []) if item['_id']},
+                'by_department': {item['_id']: item['count'] for item in result.get('by_department', []) if item['_id']},
+                'by_option': {item['_id']: item['count'] for item in result.get('by_option', []) if item['_id']},
+                'by_year': {str(item['_id']): item['count'] for item in result.get('by_year', []) if item['_id']}
             }
             
             logger.info(f"Statistics: {total} total topics")
@@ -380,7 +434,13 @@ class TopicService:
             
         except Exception as e:
             logger.error(f"Error getting statistics: {str(e)}")
-            return {'total_topics': 0, 'by_difficulty': {}}
+            return {
+                'total_topics': 0, 
+                'by_status': {},
+                'by_department': {},
+                'by_option': {},
+                'by_year': {}
+            }
 
 
 if __name__ == "__main__":

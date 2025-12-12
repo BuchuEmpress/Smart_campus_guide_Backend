@@ -99,14 +99,25 @@ class TopicIntelligenceService:
         category: str,
         department: str,
         count: int = 5,
-        keywords: Optional[List[str]] = None
+        keywords: Optional[List[str]] = None,
+        user_request: Optional[str] = None
     ) -> List[Dict]:
         """
         Generate unique topic suggestions using Gemini AI.
         """
-        # ... (method content omitted for brevity)
         try:
             logger.info(f"Generating {count} topic suggestions for {category}")
+            
+            # Smart handling: If keywords contain a long sentence, treat it as user_request
+            # This handles cases where the frontend might send the query as a keyword
+            if keywords and not user_request:
+                # Check if any keyword is long and has spaces (likely a sentence)
+                sentence_keywords = [k for k in keywords if len(str(k)) > 20 and ' ' in str(k)]
+                if sentence_keywords:
+                    user_request = " ".join(sentence_keywords)
+                    # Remove used keywords from the list to avoid duplication
+                    keywords = [k for k in keywords if k not in sentence_keywords]
+                    logger.info(f"Extracted user request from keywords: {user_request}")
             
             # Get existing topics to avoid duplicates
             existing_topics = self.topic_service.list_topics(
@@ -119,33 +130,52 @@ class TopicIntelligenceService:
             # Build prompt for Gemini
             keywords_text = ""
             if keywords:
-                keywords_text = f"\nFocus areas: {', '.join(keywords)}"
+                # Clean keywords
+                clean_keywords = [str(k).strip() for k in keywords if str(k).strip()]
+                if clean_keywords:
+                    keywords_text = f"\nFocus areas/Keywords: {', '.join(clean_keywords)}"
+            
+            # Handle user request if provided
+            user_request_section = ""
+            if user_request:
+                user_request_section = f"""
+The user wants project topics for this specific request:
+"{user_request}"
+
+Generate {count} detailed project topics aligned with what the user is asking.
+Do not repeat input literally. Create real academic topics.
+"""
+            else:
+                user_request_section = f"Generate {count} unique, innovative final year project topics."
             
             prompt = f"""
-Generate {count} unique, innovative final year project topics for {department} students specializing in {category}.
+You are an expert academic advisor helping students choose final year project topics.
+
+Context:
+- Department: {department}
+- Specialization Code: {category} (If this is an abbreviation like SEN, SWE, AI, etc., interpret it as the full field name, e.g., Software Engineering, Artificial Intelligence).
+{keywords_text}
+
+{user_request_section}
 
 Requirements:
-- Topics should be original and NOT similar to these existing topics:
+1. **Intelligent Interpretation**: Do not just keyword-match. Understand the *intent* of the request.
+2. **Academic Quality**: Topics must be suitable for a final year defense.
+3. **Originality**: NOT similar to these existing topics:
 {chr(10).join(f"  - {title}" for title in existing_titles[:20])}
 
-- Each topic should be:
-  * Feasible for a final year project (3-6 months)
-  * Use modern technologies
-  * Solve real-world problems
-  * Be specific and clear
-  * Suitable for {department} students
-  * **Where feasible, generate topics that are hybrid in nature**, combining the specialization of {category} with other relevant fields (e.g., Data Science, Environmental Tech).
-{keywords_text}
+4. **Structure**: Each topic must have a professional title, a detailed technical description, and metadata.
+5. **Hybrid Topics**: Where feasible, combine the specialization ({category}) with modern fields like AI, Blockchain, IoT, Cloud, etc.
 
 Return ONLY a JSON array with this exact structure:
 [
   {{
-    "title": "Topic title here",
-    "description": "Detailed description (50-100 words)",
+    "title": "Professional Topic Title",
+    "description": "Detailed technical description (50-100 words) explaining the problem, solution, and technology.",
     "difficulty": "beginner|intermediate|advanced",
     "tags": ["tag1", "tag2", "tag3"],
-    "prerequisites": ["prerequisite1", "prerequisite2"],
-    "estimated_duration": "4 months"
+    "prerequisites": ["Required Skill 1", "Required Skill 2"],
+    "estimated_duration": "4-6 months"
   }}
 ]
 
@@ -178,9 +208,111 @@ NO markdown, NO explanations, ONLY the JSON array.
             logger.error(f"Error generating suggestions: {str(e)}")
             return self._fallback_suggestions(category, count)
     
-    def improve_topic(self, title: str, description: str, category: str) -> Dict:
-        # ... (method content omitted for brevity)
-        pass # Placeholder for full method implementation
+    def improve_topic(
+        self, 
+        title: str, 
+        description: str, 
+        category: str,
+        user_instruction: Optional[str] = None
+    ) -> Dict:
+        """
+        Use Gemini AI to improve a topic's title and description.
+        
+        Args:
+            title: Current topic title
+            description: Current topic description
+            category: Topic category
+            user_instruction: Optional instruction from the user
+        
+        Returns:
+            Dictionary with improved title, description, keywords, and difficulty
+        """
+        try:
+            logger.info(f"Improving topic: {title}")
+            
+            user_instruction_text = ""
+            if user_instruction:
+                user_instruction_text = f"""
+User Instruction for Improvement:
+"{user_instruction}"
+(Use this instruction to guide the improvement, but DO NOT include this text in the output description.)
+"""
+            
+            prompt = f"""
+You are an expert academic editor improving a final year project topic.
+
+Original Topic:
+- Title: "{title}"
+- Description: "{description}"
+- Specialization: {category}
+
+{user_instruction_text}
+
+Task:
+1. **Refine Title**: Make it professional, academic, and specific. Avoid generic terms.
+2. **Expand Description**: Write a comprehensive 100-150 word abstract. It should cover the problem statement, proposed solution, methodology, and expected impact.
+3. **Keywords**: Suggest 5-7 relevant technical tags.
+4. **Difficulty**: Assess the technical complexity.
+
+Requirements:
+- The output must be polished and ready for a project defense proposal.
+- Do NOT repeat the user instruction in the description.
+- Interpret abbreviations in the specialization (e.g., SEN -> Software Engineering).
+
+Example of Desired Transformation:
+Input Title: "Smart Dress"
+Input Description: "app that helps people dress well"
+Output Title: "AI-Powered Smart Fashion Recommendation and Outfit Optimization System"
+Output Description: "This project proposes an intelligent fashion recommendation application that leverages artificial intelligence to analyze user preferences, body profile, clothing inventory, and current fashion trends. The system will generate personalized outfit suggestions, color-matching guidance, and occasion-based styling recommendations. It also incorporates machine-learning techniques to continuously refine suggestions based on user feedback, seasonal trends, and real-time environmental factors."
+
+Return ONLY a JSON object with this exact structure:
+{{
+  "improved_title": "Enhanced Professional Title",
+  "improved_description": "Comprehensive academic description...",
+  "suggested_tags": ["tag1", "tag2", "tag3", "tag4", "tag5"],
+  "suggested_difficulty": "intermediate"
+}}
+
+NO markdown, NO explanations, ONLY the JSON object.
+"""
+            
+            # Call Gemini
+            response = self.gemini.model.generate_content(prompt)
+            response_text = response.text.strip()
+            
+            # Clean response
+            if response_text.startswith('```json'):
+                response_text = response_text[7:]
+            if response_text.startswith('```'):
+                response_text = response_text[3:]
+            if response_text.endswith('```'):
+                response_text = response_text[:-3]
+            
+            response_text = response_text.strip()
+            
+            # Parse JSON
+            result = json.loads(response_text)
+            
+            logger.info(f"Successfully improved topic: {title}")
+            return result
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse Gemini response: {str(e)}")
+            # Return original with minimal changes
+            return {
+                'improved_title': title,
+                'improved_description': description,
+                'suggested_tags': [],
+                'suggested_difficulty': 'intermediate'
+            }
+        except Exception as e:
+            logger.error(f"Error improving topic: {str(e)}")
+            return {
+                'improved_title': title,
+                'improved_description': description,
+                'suggested_tags': [],
+                'suggested_difficulty': 'intermediate'
+            }
     
     # ====================================================================
     # EMBEDDING & SIMILARITY METHODS
@@ -253,9 +385,66 @@ NO markdown, NO explanations, ONLY the JSON array.
             logger.error(f"Error checking similarity: {str(e)}")
             return []
     
+    
     def _fallback_suggestions(self, category: str, count: int) -> List[Dict]:
-        # ... (method content omitted for brevity)
-        pass # Placeholder for full method implementation
+        """
+        Provide basic fallback suggestions when Gemini fails.
+        
+        Args:
+            category: Topic category
+            count: Number of suggestions to generate
+        
+        Returns:
+            List of basic topic suggestions
+        """
+        logger.warning(f"Using fallback suggestions for {category}")
+        
+        # Basic template-based suggestions
+        templates = [
+            {
+                "title": f"{category} Application Development",
+                "description": f"Develop a comprehensive {category} application that addresses a real-world problem. The project should demonstrate proficiency in modern development practices and technologies.",
+                "difficulty": "intermediate",
+                "tags": [category.lower(), "application", "development"],
+                "prerequisites": ["Programming fundamentals", "Software engineering"],
+                "estimated_duration": "4-5 months"
+            },
+            {
+                "title": f"Data Analysis System for {category}",
+                "description": f"Build a data analysis system tailored for {category} applications. Focus on data collection, processing, visualization, and insights generation.",
+                "difficulty": "intermediate",
+                "tags": [category.lower(), "data-analysis", "visualization"],
+                "prerequisites": ["Data structures", "Statistics basics"],
+                "estimated_duration": "4 months"
+            },
+            {
+                "title": f"Machine Learning Integration in {category}",
+                "description": f"Integrate machine learning capabilities into a {category} system. Implement predictive models and intelligent features to enhance functionality.",
+                "difficulty": "advanced",
+                "tags": [category.lower(), "machine-learning", "ai"],
+                "prerequisites": ["Machine learning basics", "Python programming"],
+                "estimated_duration": "5-6 months"
+            },
+            {
+                "title": f"Mobile Platform for {category}",
+                "description": f"Create a mobile application focused on {category}. Implement cross-platform compatibility and modern UI/UX principles.",
+                "difficulty": "intermediate",
+                "tags": [category.lower(), "mobile", "cross-platform"],
+                "prerequisites": ["Mobile development", "UI/UX design"],
+                "estimated_duration": "4 months"
+            },
+            {
+                "title": f"IoT Solution for {category}",
+                "description": f"Develop an Internet of Things solution for {category} applications. Include sensor integration, data collection, and real-time monitoring.",
+                "difficulty": "advanced",
+                "tags": [category.lower(), "iot", "sensors", "real-time"],
+                "prerequisites": ["Embedded systems", "Networking"],
+                "estimated_duration": "5 months"
+            }
+        ]
+        
+        # Return requested number of suggestions
+        return templates[:min(count, len(templates))]
 
 
 if __name__ == "__main__":

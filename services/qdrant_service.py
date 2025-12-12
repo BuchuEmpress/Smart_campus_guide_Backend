@@ -10,7 +10,8 @@ import os
 from typing import List, Dict, Optional
 from dotenv import load_dotenv
 
-from qdrant_client import AsyncQdrantClient
+import asyncio
+from qdrant_client import QdrantClient
 from qdrant_client.models import (
     Distance,
     VectorParams,
@@ -24,7 +25,7 @@ load_dotenv()
 class QdrantService:
     """Handles all Qdrant vector database operations (async + robust)."""
 
-    def __init__(self, load_model: bool = False):
+    def __init__(self, load_model: bool = False, collection_name: str = "campus_locations"):
         # Load env values
         self.qdrant_url = os.getenv("QDRANT_HOST")
         self.qdrant_key = os.getenv("QDRANT_API_KEY")
@@ -34,14 +35,14 @@ class QdrantService:
                 "Missing QDRANT_HOST or QDRANT_API_KEY in environment variables."
             )
 
-        # Async client (correct for FastAPI)
-        self.client = AsyncQdrantClient(
+        # Sync client (wrapped in async methods)
+        self.client = QdrantClient(
             url=self.qdrant_url,
             api_key=self.qdrant_key
         )
 
         self.model = None
-        self.collection_name = "campus_locations"
+        self.collection_name = collection_name
         self.vector_size = 384
 
         if load_model:
@@ -77,13 +78,18 @@ class QdrantService:
 
             vector = self.model.encode(query).tolist()
 
-            results = await self.client.search_points(
+            # Run sync query in thread pool
+            results = await asyncio.to_thread(
+                self.client.query_points,
                 collection_name=self.collection_name,
                 query=vector,
                 limit=limit,
-                filter=filter_params,
+                query_filter=filter_params,
                 with_payload=True
             )
+            
+            # Extract points from response
+            results = results.points if hasattr(results, 'points') else results
 
             formatted = []
             for hit in results:
@@ -106,10 +112,11 @@ class QdrantService:
         So we use scroll() to find exact match by payload.
         """
         try:
-            scroll_result, _ = await self.client.scroll(
+            scroll_result, _ = await asyncio.to_thread(
+                self.client.scroll,
                 collection_name=self.collection_name,
                 with_payload=True,
-                limit=1000  # safe campus size
+                limit=1000
             )
 
             for point in scroll_result:
@@ -128,13 +135,14 @@ class QdrantService:
     # -----------------------------------------------------
     async def create_collection(self, force_recreate: bool = True):
         """Creates collection if missing."""
-        exists = await self.client.collection_exists(self.collection_name)
+        exists = await asyncio.to_thread(self.client.collection_exists, self.collection_name)
 
         if exists and force_recreate:
-            await self.client.delete_collection(self.collection_name)
+            await asyncio.to_thread(self.client.delete_collection, self.collection_name)
 
         if not exists or force_recreate:
-            await self.client.create_collection(
+            await asyncio.to_thread(
+                self.client.create_collection,
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(
                     size=self.vector_size,
@@ -165,7 +173,8 @@ class QdrantService:
                     )
                 )
 
-            await self.client.upsert(
+            await asyncio.to_thread(
+                self.client.upsert,
                 collection_name=self.collection_name,
                 points=points
             )
@@ -179,7 +188,7 @@ class QdrantService:
     async def get_collection_info(self):
         """Returns Qdrant info or readable error."""
         try:
-            return await self.client.get_collection(self.collection_name)
+            return await asyncio.to_thread(self.client.get_collection, self.collection_name)
         except Exception as e:
             return {"error": str(e)}
 
