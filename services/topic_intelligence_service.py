@@ -105,7 +105,7 @@ class TopicIntelligenceService:
     
     def suggest_topics(
         self,
-        option: str,  # ✅ CHANGED FROM 'category' to 'option'
+        option: str,
         department: str,
         count: int = 5,
         keywords: Optional[List[str]] = None,
@@ -113,110 +113,63 @@ class TopicIntelligenceService:
     ) -> List[Dict]:
         """
         Generate unique topic suggestions using Gemini AI.
-        
-        Args:
-            option: Topic option/specialization (e.g., "SEN", "CNSM", "DAS")
-            department: Department name
-            count: Number of suggestions to generate
-            keywords: Optional keyword hints
-            user_request: Optional specific user request
-        
-        Returns:
-            List of topic suggestion dictionaries
         """
         try:
             logger.info(f"Generating {count} topic suggestions for option={option}, department={department}")
-            
-            # Smart handling: If keywords contain a long sentence, treat it as user_request
-            # This handles cases where the frontend might send the query as a keyword
+
+            # Handle long keywords as user_request
             if keywords and not user_request:
-                # Check if any keyword is long and has spaces (likely a sentence)
                 sentence_keywords = [k for k in keywords if len(str(k)) > 20 and ' ' in str(k)]
                 if sentence_keywords:
                     user_request = " ".join(sentence_keywords)
-                    # Remove used keywords from the list to avoid duplication
                     keywords = [k for k in keywords if k not in sentence_keywords]
                     logger.info(f"Extracted user request from keywords: {user_request}")
-            
-            # ✅ FIX: Use 'option' field (case-insensitive via TopicService)
+
+            # Get existing topics
             existing_topics = self.topic_service.list_topics(
-                filter_query={'option': option},  # Changed from 'category'
+                filter_query={'option': option},
                 limit=100
             )
-            
             existing_titles = [t['title'] for t in existing_topics]
-            
-            # Build prompt for Gemini
-            keywords_text = ""
-            if keywords:
-                # Clean keywords
-                clean_keywords = [str(k).strip() for k in keywords if str(k).strip()]
-                if clean_keywords:
-                    keywords_text = f"\nFocus areas/Keywords: {', '.join(clean_keywords)}"
-            
-            # Handle user request if provided
-            user_request_section = ""
-            if user_request:
-                user_request_section = f"""
-The user wants project topics for this specific request:
-"{user_request}"
 
-Generate {count} detailed project topics aligned with what the user is asking.
-Do not repeat input literally. Create real academic topics.
-"""
-            else:
-                user_request_section = f"Generate {count} unique, innovative final year project topics."
-            
-            # ✅ Use 'option' in prompt (but still call it category semantically for Gemini)
+            # Clean keywords
+            keywords_text = f"\nFocus areas/Keywords: {', '.join([k.strip() for k in keywords])}" if keywords else ""
+
+            # Refined prompt
             prompt = f"""
-You are an expert academic advisor helping students choose final year project topics.
+You are an expert Computer Engineering advisor at University of Bamenda, Cameroon.
 
-Context:
-- Department: {department}
-- Specialization Code: {option} (If this is an abbreviation like SEN, SWE, AI, etc., interpret it as the full field name, e.g., Software Engineering, Artificial Intelligence).
-{keywords_text}
+STUDENT'S REQUEST: "{user_request or 'Generate innovative topics'}"
+KEYWORDS:{keywords_text or ' None'}
+DEPARTMENT: {department}
+EXISTING TOPICS TO AVOID: {', '.join(existing_titles[:15]) if existing_titles else 'None'}
 
-{user_request_section}
-
-Requirements:
-1. **Intelligent Interpretation**: Do not just keyword-match. Understand the *intent* of the request.
-2. **Academic Quality**: Topics must be suitable for a final year defense.
-3. **Originality**: NOT similar to these existing topics:
-{chr(10).join(f"  - {title}" for title in existing_titles[:20])}
-
-4. **Structure**: Each topic must have a professional title, a detailed technical description, and metadata.
-5. **Hybrid Topics**: Where feasible, combine the specialization ({option}) with modern fields like AI, Blockchain, IoT, Cloud, etc.
-
-Return ONLY a JSON array with this exact structure:
-[
-  {{
-    "title": "Professional Topic Title",
-    "description": "Detailed technical description (50-100 words) explaining the problem, solution, and technology.",
-    "difficulty": "beginner|intermediate|advanced",
-    "tags": ["tag1", "tag2", "tag3"],
-    "prerequisites": ["Required Skill 1", "Required Skill 2"],
-    "estimated_duration": "4-6 months"
-  }}
-]
-
-NO markdown, NO explanations, ONLY the JSON array.
+TASK:
+- Generate {count} highly specific, implementable final year project topics aligned with the student's request.
+- Include Cameroon/Africa local context, concrete problem and solution.
+- Include exact technologies in titles and descriptions.
+- Description: 100-150 words including problem, solution, technologies, outcomes.
+- Return JSON only with keys: title, description, difficulty, tags, prerequisites, estimated_duration.
+- If no feasible topics exist, return a single JSON with N/A and explanation.
 """
             
             # Call Gemini and handle response cleanup
             response = self.gemini.model.generate_content(prompt)
             response_text = response.text.strip()
-            
+
+            # Flatten newlines and remove code block markers
+            response_text = response_text.replace('\n', ' ').strip()
             if response_text.startswith('```json'):
                 response_text = response_text[7:]
-            if response_text.startswith('```'):
+            elif response_text.startswith('```'):
                 response_text = response_text[3:]
             if response_text.endswith('```'):
                 response_text = response_text[:-3]
-            
             response_text = response_text.strip()
-            
+
             # Parse JSON
             suggestions = json.loads(response_text)
+
             
             logger.info(f"Generated {len(suggestions)} topic suggestions")
             return suggestions
@@ -253,9 +206,17 @@ NO markdown, NO explanations, ONLY the JSON array.
             user_instruction_text = ""
             if user_instruction:
                 user_instruction_text = f"""
-User Instruction for Improvement:
+MANDATORY USER INSTRUCTION - YOU MUST APPLY THIS:
 "{user_instruction}"
-(Use this instruction to guide the improvement, but DO NOT include this text in the output description.)
+
+EXAMPLES OF HOW TO APPLY INSTRUCTIONS:
+- "make it about AI" → Add machine learning models, neural networks, AI algorithms to the solution
+- "focus on mobile" → Change platform to mobile app (React Native/Flutter), add mobile-specific features
+- "add security" → Include encryption (AES-256), authentication (JWT/OAuth), security protocols
+- "use blockchain" → Integrate smart contracts (Solidity), distributed ledger, consensus mechanisms
+- "make it simpler" → Reduce scope, remove complex features, focus on core functionality
+
+You MUST incorporate this instruction into BOTH the title and description. Do NOT just acknowledge it.
 """
             
             prompt = f"""
@@ -264,7 +225,17 @@ You are an expert academic editor improving a final year project topic.
 Original Topic:
 - Title: "{title}"
 - Description: "{description}"
-- Specialization: {option}
+Specialization Constraint:
+- Option code: {option}
+- Interpretation:
+  - SEN → Software Engineering–oriented solution design
+  - DAS → Data Science / AI–oriented solution design
+  - CNSM → Networks, systems, and infrastructure–oriented solution design
+
+IMPORTANT:
+- The specialization is a constraint, NOT part of the title.
+- Do NOT mention the option code or its expansion in the title.
+
 
 {user_instruction_text}
 
@@ -277,7 +248,8 @@ Task:
 Requirements:
 - The output must be polished and ready for a project defense proposal.
 - Do NOT repeat the user instruction in the description.
-- Interpret abbreviations in the specialization (e.g., SEN -> Software Engineering).
+- Use the specialization ONLY to guide scope, technologies, and methodology.
+
 
 Example of Desired Transformation:
 Input Title: "Smart Dress"
