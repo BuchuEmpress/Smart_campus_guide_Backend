@@ -103,7 +103,7 @@ class TopicIntelligenceService:
     # GEMINI AI METHODS (FIXED TO USE 'option')
     # ====================================================================
     
-    def suggest_topics(
+    async def suggest_topics(
         self,
         option: str,
         department: str,
@@ -142,19 +142,39 @@ You are an expert Computer Engineering advisor at University of Bamenda, Cameroo
 STUDENT'S REQUEST: "{user_request or 'Generate innovative topics'}"
 KEYWORDS:{keywords_text or ' None'}
 DEPARTMENT: {department}
+SPECIALIZATION (Option): {option}
+OPTION INTERPRETATION:
+- SEN → Software Engineering
+- DAS → Data Science & AI
+- CNSM → Networks, Systems & Maintenance
 EXISTING TOPICS TO AVOID: {', '.join(existing_titles[:15]) if existing_titles else 'None'}
 
 TASK:
-- Generate {count} highly specific, implementable final year project topics aligned with the student's request.
-- Include Cameroon/Africa local context, concrete problem and solution.
-- Include exact technologies in titles and descriptions.
-- Description: 100-150 words including problem, solution, technologies, outcomes.
-- Return JSON only with keys: title, description, difficulty, tags, prerequisites, estimated_duration.
-- If no feasible topics exist, return a single JSON with N/A and explanation.
+- Generate {count} innovative, high-impact final year project topics.
+- **TONE**: Warm, encouraging, and professional. The descriptions should feel like a helpful mentor explaining an exciting opportunity.
+- **CONTEXT**: Deeply rooted in Cameroon/Africa context (local problems, local solutions).
+- **STRICT TITLE RULES**: 
+  - NEVER end a title with "for SEN", "for DAS", or "for CNSM".
+  - NEVER mention the option code in the title.
+  - The specialization should be obvious from the *technology* and *domain*.
+- **DESCRIPTION**: 100-150 words. inspiring yet technical. Explain the *status quo*, the *innovation*, and the *impact*.
+- **OUTPUT**: JSON ONLY. No polite passing remarks outside the JSON.
+
+**CONVERSATIONAL INPUT HANDLING**:
+If the user's request is just a greeting (e.g., "Hi", "Hello", "Hey") or vague:
+- Return a SINGLE suggestion item.
+- Title: "Hello! 👋 I'm your Research Assistant"
+- Description: "I'd love to help you find the perfect project topic! Please tell me a bit about your interests. Are you into Mobile Apps, AI, IoT, or Security? Or just ask me to 'Generate topics for [Option]'!"
+- Tags: ["help", "guide"]
+- Difficulty: "beginner"
+
+
+Keys required: title, description, difficulty, tags, prerequisites, estimated_duration.
+If no feasible topics exist, return a single JSON with N/A and explanation.
 """
             
             # Call Gemini and handle response cleanup
-            response = self.gemini.model.generate_content(prompt)
+            response = await self.gemini._call_model(prompt)
             response_text = response.text.strip()
 
             # Flatten newlines and remove code block markers
@@ -181,7 +201,7 @@ TASK:
             logger.error(f"Error generating suggestions: {str(e)}")
             return self._fallback_suggestions(option, count)
     
-    def improve_topic(
+    async def improve_topic(
         self, 
         title: str, 
         description: str, 
@@ -240,15 +260,24 @@ IMPORTANT:
 {user_instruction_text}
 
 Task:
-1. **Refine Title**: Make it professional, academic, and specific. Avoid generic terms.
-2. **Expand Description**: Write a comprehensive 100-150 word abstract. It should cover the problem statement, proposed solution, methodology, and expected impact.
-3. **Keywords**: Suggest 5-7 relevant technical tags.
-4. **Difficulty**: Assess the technical complexity.
+1. **Analyze Input**:
+   - If the input is **Conversational** (e.g., "Hi", "Hello", "Good morning"):
+     - **Title**: Return a friendly greeting (e.g., "Hello! 👋").
+     - **Description**: Return a warm, mentoring message asking them about their project ideas. (e.g., "I'm here to help you craft an amazing project! What area describes your interest? AI, Mobile Apps, or maybe something with Hardware?").
+     - **Tags**: ["chat", "mentoring"].
+     - **Difficulty**: "beginner".
+   - If the input is a **Topic Idea**:
+     - **Refine Title**: Make it professional yet innovative.
+     - **Expand Description**: Write a 100-150 word abstract.
+       - **TONE**: Warm, helpful, and mentoring. Write as if you are guiding a student.
+       - **DOMAIN CONSTRAINT**: STRICTLY Computer Engineering / Software / IT.
+         - If the user asks about unrelated topics (e.g., "Physics"), pivot to a software solution.
+     - **Keywords**: 5-7 technical tags.
+     - **Difficulty**: Assess complexity.
 
 Requirements:
-- The output must be polished and ready for a project defense proposal.
-- Do NOT repeat the user instruction in the description.
-- Use the specialization ONLY to guide scope, technologies, and methodology.
+- The output must be JSON.
+- **TONE**: always warm and human-like.
 
 
 Example of Desired Transformation:
@@ -269,7 +298,7 @@ NO markdown, NO explanations, ONLY the JSON object.
 """
             
             # Call Gemini
-            response = self.gemini.model.generate_content(prompt)
+            response = await self.gemini._call_model(prompt)
             response_text = response.text.strip()
             
             # Clean response
@@ -331,6 +360,10 @@ NO markdown, NO explanations, ONLY the JSON object.
                 limit=100
             )
             
+            logger.info(f"DEBUG SIMILARITY: Option='{option}' -> Found {len(existing)} existing topics in DB")
+            if existing:
+                 logger.info(f"DEBUG SIMILARITY: Sample existing titles: {[t.get('title') for t in existing[:3]]}")
+
             if not existing:
                 logger.info(f"No existing topics found for option '{option}'")
                 return []
@@ -354,6 +387,10 @@ NO markdown, NO explanations, ONLY the JSON object.
             
             # Calculate cosine similarity (dot product of normalized vectors)
             similarities = np.dot(existing_embeddings_norm, new_embedding_norm)
+
+            # DEBUG: Log top scores
+            logger.info(f"DEBUG SIMILARITY: Top 5 scores: {sorted(similarities, reverse=True)[:5]}")
+            logger.info(f"DEBUG SIMILARITY: Threshold used: {threshold}")
 
             # 4. Filter results
             similar_topics = []

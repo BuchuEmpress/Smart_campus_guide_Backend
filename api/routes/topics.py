@@ -281,9 +281,7 @@ async def suggest_topics(request: models.TopicSuggestionRequest):
     NOW USES 'option' field correctly!
     """
     # ✅ FIX: Use 'option' parameter name (matches service signature)
-    suggest_func = topic_ai.suggest_topics
-    suggestions = await asyncio.to_thread(
-        suggest_func,
+    suggestions = await topic_ai.suggest_topics(
         option=request.option,  # Changed from category=request.option
         department=request.department,
         count=request.count,
@@ -299,9 +297,7 @@ async def improve_topic(request: models.TopicImproveRequest):
     NOW USES 'option' field correctly!
     """
     # ✅ FIX: Use 'option' parameter name
-    improve_func = topic_ai.improve_topic
-    result = await asyncio.to_thread(
-        improve_func,
+    result = await topic_ai.improve_topic(
         title=request.title,
         description=request.description,
         option=request.option,  # Changed from category=request.option
