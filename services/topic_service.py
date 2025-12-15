@@ -1,13 +1,13 @@
 """
-Topic Service Module - COMPLETE VERSION
+Topic Service Module - COMPLETE VERSION WITH CASE-INSENSITIVE FIXES
 
 Handles all CRUD operations for final year project topics.
-Now includes ALL methods required by topics.py routes.
+NOW WITH: Case-insensitive searching for department, option, and status.
 
 Features:
 - Add, update, delete topics
-- Search with filters
-- Check duplicates
+- Search with filters (CASE-INSENSITIVE)
+- Check duplicates (CASE-INSENSITIVE)
 - Track views and searches
 - Get statistics
 """
@@ -15,6 +15,7 @@ Features:
 import os
 import logging
 import hashlib
+import re
 from typing import Dict, List, Optional
 from datetime import datetime
 from bson import ObjectId
@@ -30,35 +31,65 @@ class TopicService:
     Complete service for managing final year project topics.
     
     All methods are SYNCHRONOUS (not async) to match MongoDB service.
+    NOW WITH CASE-INSENSITIVE SUPPORT!
     """
     
     def __init__(self, mongo_service: Optional[MongoDBService] = None):
         """Initialize Topic Service with sync MongoDB."""
-        if mongo_service and hasattr(mongo_service, 'db') and mongo_service.db:
-            self.mongo = mongo_service
-        else:
-            from pymongo import MongoClient
-            from dotenv import load_dotenv
-            load_dotenv()
-            
-            uri = os.getenv('MONGODB_URI')
-            if not uri:
-                logger.warning("MONGODB_URI not set")
-                self.mongo = type('obj', (object,), {'db': None})()
-                return
-            
-            try:
-                client = MongoClient(uri, serverSelectionTimeoutMS=5000)
-                client.admin.command('ping')
-                self.mongo = type('obj', (object,), {
-                    'db': client['smart_campus_db'],
-                    'client': client
-                })()
-                logger.info("✅ MongoDB connected")
-            except Exception as e:
-                logger.error(f"MongoDB failed: {e}")
-                self.mongo = type('obj', (object,), {'db': None})()
+        from pymongo import MongoClient
+        from dotenv import load_dotenv
+        load_dotenv()
+    
+        uri = os.getenv('MONGODB_URI')
+        if not uri:
+            logger.warning("MONGODB_URI not set")
+            self.mongo = type('obj', (object,), {'db': None})()
+            return
+        
+        try:
+            client = MongoClient(uri, serverSelectionTimeoutMS=5000)
+            client.admin.command('ping')
+            self.mongo = type('obj', (object,), {
+                'db': client['smart_campus_db'],
+                'client': client
+            })()
+            logger.info("✅ MongoDB connected")
+        except Exception as e:
+            logger.error(f"MongoDB failed: {e}")
+            self.mongo = type('obj', (object,), {'db': None})()
         logger.info("Topic service initialized")
+    
+    @staticmethod
+    def _escape_regex(text: str) -> str:
+        """
+        Escape special regex characters to prevent regex injection.
+        
+        Args:
+            text: Text to escape
+        
+        Returns:
+            Escaped text safe for regex
+        """
+        return re.escape(text)
+    
+    @staticmethod
+    def _make_case_insensitive_filter(field: str, value: str) -> Dict:
+        """
+        Create a case-insensitive exact match filter for MongoDB.
+        
+        Args:
+            field: Field name
+            value: Value to match (case-insensitive)
+        
+        Returns:
+            MongoDB filter dict with regex
+        
+        Example:
+            >>> _make_case_insensitive_filter('department', 'Computer Engineering')
+            {'department': {'$regex': '^Computer\\ Engineering$', '$options': 'i'}}
+        """
+        escaped = TopicService._escape_regex(value)
+        return {field: {'$regex': f'^{escaped}$', '$options': 'i'}}
     
     def add_topic(self, topic_data: Dict) -> Optional[str]:
         """
@@ -110,7 +141,6 @@ class TopicService:
         """
         try:
             collection = self.mongo.db['topics']
-            # Query by custom topic_id, not _id
             topic = collection.find_one({'topic_id': topic_id})
             return topic
         except Exception as e:
@@ -125,6 +155,7 @@ class TopicService:
     ) -> List[Dict]:
         """
         List topics with optional filtering and pagination.
+        NOW WITH CASE-INSENSITIVE SUPPORT!
         
         Args:
             filter_query: MongoDB filter query
@@ -138,12 +169,20 @@ class TopicService:
             collection = self.mongo.db['topics']
             query = filter_query or {}
             
-            # Convert string year to int if present in query
-            if 'year' in query and isinstance(query['year'], str):
-                if query['year'].isdigit():
-                    query['year'] = int(query['year'])
+            # Convert string filters to case-insensitive
+            processed_query = {}
+            for key, value in query.items():
+                if key in ['department', 'option', 'status'] and isinstance(value, str):
+                    # Make case-insensitive
+                    processed_query.update(self._make_case_insensitive_filter(key, value))
+                elif key == 'year' and isinstance(value, str) and value.isdigit():
+                    # Convert string year to int
+                    processed_query[key] = int(value)
+                else:
+                    # Keep as-is (including $in, $ne, etc.)
+                    processed_query[key] = value
 
-            cursor = collection.find(query).skip(skip).limit(limit)
+            cursor = collection.find(processed_query).skip(skip).limit(limit)
             topics = list(cursor)
             
             logger.info(f"Retrieved {len(topics)} topics")
@@ -164,13 +203,14 @@ class TopicService:
     ) -> List[Dict]:
         """
         Search topics by keyword with filters.
+        ALL FILTERS ARE NOW CASE-INSENSITIVE!
         
         Args:
-            query: Search query
-            department: Filter by department
-            option: Filter by option
-            year: Filter by year
-            status: Filter by status
+            query: Search query (searches in title - case-insensitive)
+            department: Filter by department (case-insensitive)
+            option: Filter by option (case-insensitive)
+            year: Filter by year (exact match)
+            status: Filter by status (case-insensitive)
             limit: Maximum results
         
         Returns:
@@ -182,38 +222,48 @@ class TopicService:
             # Build search filter
             search_filter = {}
             
+            # Title search - case-insensitive partial match
             if query:
-                search_filter['title'] = {'$regex': query, '$options': 'i'}
+                escaped_query = self._escape_regex(query)
+                search_filter['title'] = {'$regex': escaped_query, '$options': 'i'}
             
+            # Department - case-insensitive exact match
             if department:
-                search_filter['department'] = department
+                search_filter.update(self._make_case_insensitive_filter('department', department))
+            
+            # Option - case-insensitive exact match
             if option:
-                search_filter['option'] = option
+                search_filter.update(self._make_case_insensitive_filter('option', option))
+            
+            # Year - exact match (no case-insensitive needed for numbers)
             if year:
                 search_filter['year'] = year
+            
+            # Status - case-insensitive exact match
             if status:
-                search_filter['status'] = status
+                search_filter.update(self._make_case_insensitive_filter('status', status))
                 
             cursor = collection.find(search_filter).limit(limit)
             results = list(cursor)
             
-            logger.info(f"Search '{query}' found {len(results)} topics")
+            logger.info(f"Search '{query}' with filters found {len(results)} topics")
             return results
             
         except Exception as e:
             logger.error(f"Error searching topics: {str(e)}")
             return []
     
-    def check_duplicate(self, title: str, category: Optional[str] = None) -> Optional[Dict]:
+    def check_duplicate(self, title: str, option: Optional[str] = None) -> Optional[Dict]:
         """
         Check if a topic with similar title already exists.
+        NOW WITH CASE-INSENSITIVE TITLE AND OPTION MATCHING!
         
-        NOTE: This performs a strict title check. For semantic similarity, 
+        NOTE: This performs a title check. For semantic similarity, 
         TopicIntelligenceService should be used.
         
         Args:
-            title: Topic title to check
-            category: Optional category filter (ignored, kept for compatibility)
+            title: Topic title to check (case-insensitive)
+            option: Optional option filter (case-insensitive)
         
         Returns:
             Existing topic if found, None otherwise
@@ -221,8 +271,13 @@ class TopicService:
         try:
             collection = self.mongo.db['topics']
             
-            # Build query - Case-insensitive partial match
-            query = {'title': {'$regex': title, '$options': 'i'}}
+            # Build query - Case-insensitive partial match on title
+            escaped_title = self._escape_regex(title)
+            query = {'title': {'$regex': escaped_title, '$options': 'i'}}
+            
+            # Add option filter if provided (case-insensitive)
+            if option:
+                query.update(self._make_case_insensitive_filter('option', option))
             
             existing = collection.find_one(query)
             
@@ -244,25 +299,33 @@ class TopicService:
     ) -> Optional[Dict]:
         """
         Find exact duplicate topic.
+        NOW WITH CASE-INSENSITIVE MATCHING!
         
         Args:
-            title: Topic title
-            department: Department
-            option: Option
-            year: Year
+            title: Topic title (case-insensitive)
+            department: Department (case-insensitive)
+            option: Option (case-insensitive)
+            year: Year (exact match)
             
         Returns:
             Duplicate topic if found
         """
         try:
             collection = self.mongo.db['topics']
+            
+            # Build case-insensitive query
+            escaped_title = self._escape_regex(title)
             query = {
-                'title': title,
-                'department': department,
-                'option': option,
+                'title': {'$regex': f'^{escaped_title}$', '$options': 'i'},
                 'year': year
             }
+            
+            # Add case-insensitive department and option
+            query.update(self._make_case_insensitive_filter('department', department))
+            query.update(self._make_case_insensitive_filter('option', option))
+            
             return collection.find_one(query)
+            
         except Exception as e:
             logger.error(f"Error finding duplicate: {str(e)}")
             return None
@@ -444,5 +507,9 @@ class TopicService:
 
 
 if __name__ == "__main__":
-    # Test
-    print("Topic Service - All methods implemented ✅")
+    # Test case-insensitive functionality
+    print("✅ Topic Service - Complete with Case-Insensitive Support!")
+    print("\nExample usage:")
+    print("  search_topics(department='computer engineering')  # Matches 'Computer Engineering'")
+    print("  search_topics(option='sen')                      # Matches 'SEN'")
+    print("  search_topics(status='taken')                    # Matches 'Taken'")

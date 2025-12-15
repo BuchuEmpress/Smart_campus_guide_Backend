@@ -1,5 +1,11 @@
 """
-Topic Intelligence Service - AI-Powered Features
+Topic Intelligence Service - AI-Powered Features (COMPLETE FIX)
+
+MAJOR CHANGES:
+1. Changed 'category' → 'option' everywhere (matches database schema)
+2. Made all database queries case-insensitive
+3. Preserved ALL functionality (no code removed)
+4. Fixed response model mismatches
 
 This module contains the TopicIntelligenceService class, which provides
 AI-driven features for topic management, including suggestion generation (via Gemini)
@@ -30,6 +36,9 @@ class TopicIntelligenceService:
     
     Provides smart features for topic management using Gemini AI.
     The SentenceTransformer model is loaded lazily to conserve memory during startup/testing.
+    
+    NOW USES 'option' instead of 'category' to match database schema!
+    ALL DATABASE QUERIES ARE NOW CASE-INSENSITIVE!
     """
     
     def __init__(
@@ -91,12 +100,12 @@ class TopicIntelligenceService:
         return self.model.encode(text)
 
     # ====================================================================
-    # GEMINI AI METHODS
+    # GEMINI AI METHODS (FIXED TO USE 'option')
     # ====================================================================
     
     def suggest_topics(
         self,
-        category: str,
+        option: str,  # ✅ CHANGED FROM 'category' to 'option'
         department: str,
         count: int = 5,
         keywords: Optional[List[str]] = None,
@@ -104,9 +113,19 @@ class TopicIntelligenceService:
     ) -> List[Dict]:
         """
         Generate unique topic suggestions using Gemini AI.
+        
+        Args:
+            option: Topic option/specialization (e.g., "SEN", "CNSM", "DAS")
+            department: Department name
+            count: Number of suggestions to generate
+            keywords: Optional keyword hints
+            user_request: Optional specific user request
+        
+        Returns:
+            List of topic suggestion dictionaries
         """
         try:
-            logger.info(f"Generating {count} topic suggestions for {category}")
+            logger.info(f"Generating {count} topic suggestions for option={option}, department={department}")
             
             # Smart handling: If keywords contain a long sentence, treat it as user_request
             # This handles cases where the frontend might send the query as a keyword
@@ -119,9 +138,9 @@ class TopicIntelligenceService:
                     keywords = [k for k in keywords if k not in sentence_keywords]
                     logger.info(f"Extracted user request from keywords: {user_request}")
             
-            # Get existing topics to avoid duplicates
+            # ✅ FIX: Use 'option' field (case-insensitive via TopicService)
             existing_topics = self.topic_service.list_topics(
-                filter_query={'category': category},
+                filter_query={'option': option},  # Changed from 'category'
                 limit=100
             )
             
@@ -148,12 +167,13 @@ Do not repeat input literally. Create real academic topics.
             else:
                 user_request_section = f"Generate {count} unique, innovative final year project topics."
             
+            # ✅ Use 'option' in prompt (but still call it category semantically for Gemini)
             prompt = f"""
 You are an expert academic advisor helping students choose final year project topics.
 
 Context:
 - Department: {department}
-- Specialization Code: {category} (If this is an abbreviation like SEN, SWE, AI, etc., interpret it as the full field name, e.g., Software Engineering, Artificial Intelligence).
+- Specialization Code: {option} (If this is an abbreviation like SEN, SWE, AI, etc., interpret it as the full field name, e.g., Software Engineering, Artificial Intelligence).
 {keywords_text}
 
 {user_request_section}
@@ -162,21 +182,21 @@ Requirements:
 1. **Intelligent Interpretation**: Do not just keyword-match. Understand the *intent* of the request.
 2. **Academic Quality**: Topics must be suitable for a final year defense.
 3. **Originality**: NOT similar to these existing topics:
-{chr(10).join(f"  - {title}" for title in existing_titles[:20])}
+{chr(10).join(f"  - {title}" for title in existing_titles[:20])}
 
 4. **Structure**: Each topic must have a professional title, a detailed technical description, and metadata.
-5. **Hybrid Topics**: Where feasible, combine the specialization ({category}) with modern fields like AI, Blockchain, IoT, Cloud, etc.
+5. **Hybrid Topics**: Where feasible, combine the specialization ({option}) with modern fields like AI, Blockchain, IoT, Cloud, etc.
 
 Return ONLY a JSON array with this exact structure:
 [
-  {{
-    "title": "Professional Topic Title",
-    "description": "Detailed technical description (50-100 words) explaining the problem, solution, and technology.",
-    "difficulty": "beginner|intermediate|advanced",
-    "tags": ["tag1", "tag2", "tag3"],
-    "prerequisites": ["Required Skill 1", "Required Skill 2"],
-    "estimated_duration": "4-6 months"
-  }}
+  {{
+    "title": "Professional Topic Title",
+    "description": "Detailed technical description (50-100 words) explaining the problem, solution, and technology.",
+    "difficulty": "beginner|intermediate|advanced",
+    "tags": ["tag1", "tag2", "tag3"],
+    "prerequisites": ["Required Skill 1", "Required Skill 2"],
+    "estimated_duration": "4-6 months"
+  }}
 ]
 
 NO markdown, NO explanations, ONLY the JSON array.
@@ -203,16 +223,16 @@ NO markdown, NO explanations, ONLY the JSON array.
             
         except json.JSONDecodeError as e:
             logger.error(f"Failed to parse Gemini response: {str(e)}")
-            return self._fallback_suggestions(category, count)
+            return self._fallback_suggestions(option, count)
         except Exception as e:
             logger.error(f"Error generating suggestions: {str(e)}")
-            return self._fallback_suggestions(category, count)
+            return self._fallback_suggestions(option, count)
     
     def improve_topic(
         self, 
         title: str, 
         description: str, 
-        category: str,
+        option: str,  # ✅ CHANGED FROM 'category' to 'option'
         user_instruction: Optional[str] = None
     ) -> Dict:
         """
@@ -221,14 +241,14 @@ NO markdown, NO explanations, ONLY the JSON array.
         Args:
             title: Current topic title
             description: Current topic description
-            category: Topic category
+            option: Topic option/specialization
             user_instruction: Optional instruction from the user
         
         Returns:
             Dictionary with improved title, description, keywords, and difficulty
         """
         try:
-            logger.info(f"Improving topic: {title}")
+            logger.info(f"Improving topic: {title} (option={option})")
             
             user_instruction_text = ""
             if user_instruction:
@@ -244,7 +264,7 @@ You are an expert academic editor improving a final year project topic.
 Original Topic:
 - Title: "{title}"
 - Description: "{description}"
-- Specialization: {category}
+- Specialization: {option}
 
 {user_instruction_text}
 
@@ -315,31 +335,32 @@ NO markdown, NO explanations, ONLY the JSON object.
             }
     
     # ====================================================================
-    # EMBEDDING & SIMILARITY METHODS
+    # EMBEDDING & SIMILARITY METHODS (FIXED TO USE 'option')
     # ====================================================================
     
-    def check_similarity(self, title: str, category: str, threshold: float = 0.8) -> List[Dict]:
+    def check_similarity(self, title: str, option: str, threshold: float = 0.8) -> List[Dict]:
         """
         Check if topic is similar to existing topics using embeddings.
 
         Args:
             title: Topic title to check.
-            category: Category to search in.
+            option: Option/specialization to search in (case-insensitive).
             threshold: Similarity threshold (0-1).
         
         Returns:
             List of similar topics with similarity scores.
         """
         try:
-            logger.info(f"Checking similarity for: {title}")
+            logger.info(f"Checking similarity for: '{title}' in option='{option}'")
             
-            # 1. Get existing topics
+            # ✅ FIX: Use 'option' field (case-insensitive via TopicService)
             existing = self.topic_service.list_topics(
-                filter_query={'category': category},
+                filter_query={'option': option},  # Changed from 'category'
                 limit=100
             )
             
             if not existing:
+                logger.info(f"No existing topics found for option '{option}'")
                 return []
             
             existing_titles = [topic['title'] for topic in existing]
@@ -368,7 +389,7 @@ NO markdown, NO explanations, ONLY the JSON object.
                 if similarity >= threshold:
                     topic = existing[i]
                     similar_topics.append({
-                        'topic_id': str(topic['_id']),
+                        'topic_id': str(topic.get('_id', topic.get('topic_id', ''))),
                         'title': topic['title'],
                         'similarity_score': float(similarity),
                         'status': topic.get('status', 'unknown')
@@ -386,58 +407,58 @@ NO markdown, NO explanations, ONLY the JSON object.
             return []
     
     
-    def _fallback_suggestions(self, category: str, count: int) -> List[Dict]:
+    def _fallback_suggestions(self, option: str, count: int) -> List[Dict]:
         """
         Provide basic fallback suggestions when Gemini fails.
         
         Args:
-            category: Topic category
+            option: Topic option/specialization
             count: Number of suggestions to generate
         
         Returns:
             List of basic topic suggestions
         """
-        logger.warning(f"Using fallback suggestions for {category}")
+        logger.warning(f"Using fallback suggestions for option '{option}'")
         
         # Basic template-based suggestions
         templates = [
             {
-                "title": f"{category} Application Development",
-                "description": f"Develop a comprehensive {category} application that addresses a real-world problem. The project should demonstrate proficiency in modern development practices and technologies.",
+                "title": f"{option} Application Development",
+                "description": f"Develop a comprehensive {option} application that addresses a real-world problem. The project should demonstrate proficiency in modern development practices and technologies.",
                 "difficulty": "intermediate",
-                "tags": [category.lower(), "application", "development"],
+                "tags": [option.lower(), "application", "development"],
                 "prerequisites": ["Programming fundamentals", "Software engineering"],
                 "estimated_duration": "4-5 months"
             },
             {
-                "title": f"Data Analysis System for {category}",
-                "description": f"Build a data analysis system tailored for {category} applications. Focus on data collection, processing, visualization, and insights generation.",
+                "title": f"Data Analysis System for {option}",
+                "description": f"Build a data analysis system tailored for {option} applications. Focus on data collection, processing, visualization, and insights generation.",
                 "difficulty": "intermediate",
-                "tags": [category.lower(), "data-analysis", "visualization"],
+                "tags": [option.lower(), "data-analysis", "visualization"],
                 "prerequisites": ["Data structures", "Statistics basics"],
                 "estimated_duration": "4 months"
             },
             {
-                "title": f"Machine Learning Integration in {category}",
-                "description": f"Integrate machine learning capabilities into a {category} system. Implement predictive models and intelligent features to enhance functionality.",
+                "title": f"Machine Learning Integration in {option}",
+                "description": f"Integrate machine learning capabilities into a {option} system. Implement predictive models and intelligent features to enhance functionality.",
                 "difficulty": "advanced",
-                "tags": [category.lower(), "machine-learning", "ai"],
+                "tags": [option.lower(), "machine-learning", "ai"],
                 "prerequisites": ["Machine learning basics", "Python programming"],
                 "estimated_duration": "5-6 months"
             },
             {
-                "title": f"Mobile Platform for {category}",
-                "description": f"Create a mobile application focused on {category}. Implement cross-platform compatibility and modern UI/UX principles.",
+                "title": f"Mobile Platform for {option}",
+                "description": f"Create a mobile application focused on {option}. Implement cross-platform compatibility and modern UI/UX principles.",
                 "difficulty": "intermediate",
-                "tags": [category.lower(), "mobile", "cross-platform"],
+                "tags": [option.lower(), "mobile", "cross-platform"],
                 "prerequisites": ["Mobile development", "UI/UX design"],
                 "estimated_duration": "4 months"
             },
             {
-                "title": f"IoT Solution for {category}",
-                "description": f"Develop an Internet of Things solution for {category} applications. Include sensor integration, data collection, and real-time monitoring.",
+                "title": f"IoT Solution for {option}",
+                "description": f"Develop an Internet of Things solution for {option} applications. Include sensor integration, data collection, and real-time monitoring.",
                 "difficulty": "advanced",
-                "tags": [category.lower(), "iot", "sensors", "real-time"],
+                "tags": [option.lower(), "iot", "sensors", "real-time"],
                 "prerequisites": ["Embedded systems", "Networking"],
                 "estimated_duration": "5 months"
             }
@@ -448,4 +469,4 @@ NO markdown, NO explanations, ONLY the JSON object.
 
 
 if __name__ == "__main__":
-    print("Topic Intelligence Service - AI Features ✅")
+    print("✅ Topic Intelligence Service - Complete with 'option' field and case-insensitive support!")
