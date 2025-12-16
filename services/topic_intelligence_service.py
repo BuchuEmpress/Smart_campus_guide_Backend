@@ -174,11 +174,10 @@ If no feasible topics exist, return a single JSON with N/A and explanation.
 """
             
             # Call Gemini and handle response cleanup
-            response = await self.gemini._call_model(prompt)
-            response_text = response.text.strip()
+            response_text = await self.gemini._call_model(prompt)
+            # response_text is already a string returned by _call_model
 
-            # Flatten newlines and remove code block markers
-            response_text = response_text.replace('\n', ' ').strip()
+            # Remove markdown code blocks only
             if response_text.startswith('```json'):
                 response_text = response_text[7:]
             elif response_text.startswith('```'):
@@ -298,8 +297,8 @@ NO markdown, NO explanations, ONLY the JSON object.
 """
             
             # Call Gemini
-            response = await self.gemini._call_model(prompt)
-            response_text = response.text.strip()
+            response_text = await self.gemini._call_model(prompt)
+            response_text = response_text.strip()
             
             # Clean response
             if response_text.startswith('```json'):
@@ -360,10 +359,6 @@ NO markdown, NO explanations, ONLY the JSON object.
                 limit=100
             )
             
-            logger.info(f"DEBUG SIMILARITY: Option='{option}' -> Found {len(existing)} existing topics in DB")
-            if existing:
-                 logger.info(f"DEBUG SIMILARITY: Sample existing titles: {[t.get('title') for t in existing[:3]]}")
-
             if not existing:
                 logger.info(f"No existing topics found for option '{option}'")
                 return []
@@ -387,10 +382,6 @@ NO markdown, NO explanations, ONLY the JSON object.
             
             # Calculate cosine similarity (dot product of normalized vectors)
             similarities = np.dot(existing_embeddings_norm, new_embedding_norm)
-
-            # DEBUG: Log top scores
-            logger.info(f"DEBUG SIMILARITY: Top 5 scores: {sorted(similarities, reverse=True)[:5]}")
-            logger.info(f"DEBUG SIMILARITY: Threshold used: {threshold}")
 
             # 4. Filter results
             similar_topics = []

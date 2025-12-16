@@ -19,7 +19,7 @@ try:
 except ImportError:
     raise RuntimeError("google-genai package not installed. Run: pip install google-genai")
 
-load_dotenv()
+load_dotenv(override=True)
 
 logger = logging.getLogger("services.gemini_service")
 logging.basicConfig(level=logging.INFO)
@@ -30,11 +30,12 @@ class GeminiService:
 
     def __init__(self, api_key: Optional[str] = None, model_name: Optional[str] = None):
         """Initialize GeminiService."""
+        # print("GEMINI_API_KEY:", os.getenv("GEMINI_API_KEY"))  # Security: Don't log API keys
         self.api_key = api_key or os.getenv("GEMINI_API_KEY")
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY must be set in environment or passed to GeminiService.")
 
-        self.model_name = model_name or os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash")
+        self.model_name = model_name or os.getenv("GEMINI_MODEL_NAME", "gemini-flash-latest")
         
         # Initialize client
         try:

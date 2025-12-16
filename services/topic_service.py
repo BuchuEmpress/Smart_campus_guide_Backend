@@ -75,7 +75,7 @@ class TopicService:
     @staticmethod
     def _make_case_insensitive_filter(field: str, value: str) -> Dict:
         """
-        Create a case-insensitive exact match filter for MongoDB.
+        Create a case-insensitive match filter for MongoDB.
         
         Args:
             field: Field name
@@ -85,11 +85,12 @@ class TopicService:
             MongoDB filter dict with regex
         
         Example:
-            >>> _make_case_insensitive_filter('department', 'Computer Engineering')
-            {'department': {'$regex': '^Computer\\ Engineering$', '$options': 'i'}}
+            >>> _make_case_insensitive_filter('department', 'Computer')
+            {'department': {'$regex': 'Computer', '$options': 'i'}}
         """
         escaped = TopicService._escape_regex(value)
-        return {field: {'$regex': f'^{escaped}$', '$options': 'i'}}
+        # Removed anchors ^ and $ to allow partial matches and fix strictness issues
+        return {field: {'$regex': f'{escaped}', '$options': 'i'}}
     
     def add_topic(self, topic_data: Dict) -> Optional[str]:
         """
@@ -132,6 +133,7 @@ class TopicService:
     def get_topic_by_id(self, topic_id: str) -> Optional[Dict]:
         """
         Get a specific topic by its custom topic_id.
+        CASE-INSENSITIVE LOOKUP!
         
         Args:
             topic_id: Custom topic ID string
@@ -141,7 +143,9 @@ class TopicService:
         """
         try:
             collection = self.mongo.db['topics']
-            topic = collection.find_one({'topic_id': topic_id})
+            # Regular expression for case-insensitive ID match
+            escaped_id = self._escape_regex(topic_id)
+            topic = collection.find_one({'topic_id': {'$regex': f'^{escaped_id}$', '$options': 'i'}})
             return topic
         except Exception as e:
             logger.error(f"Error getting topic {topic_id}: {str(e)}")
