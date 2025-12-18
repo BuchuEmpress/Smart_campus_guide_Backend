@@ -92,6 +92,9 @@ app = FastAPI(
 # CORS Configuration
 # ============================================================
 allowed_origins = [
+    "https://smart-campus-guide-frontend.vercel.app",
+
+    # local dev
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:3000",
