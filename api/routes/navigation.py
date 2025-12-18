@@ -49,7 +49,7 @@ def _sanitize_location(loc_data: dict, fallback_id: str = "Unknown") -> dict:
 # =============== DEPENDENCIES ===============
 
 def get_qdrant_service():
-    return QdrantService(load_model=True)
+    return QdrantService()
 
 def get_gemini_service():
     return GeminiService()
@@ -286,7 +286,7 @@ async def navigation_chat(
             if dest_results:
                 dest = dest_results[0]
                 # Get route
-                start_coords = (request.user_location.latitude, request.user_location.longitude)
+                start_coords = (request.user_location.lat, request.user_location.lon)
                 end_coords = (dest.get("latitude"), dest.get("longitude"))
                 
                 route = osm_routing_service.get_route(start_coords, end_coords)
@@ -302,7 +302,7 @@ async def navigation_chat(
         # 3. Save user message
         await mongodb_service.save_chat_message(
             request.session_id, "location", "user", request.message, 
-            metadata={"user_location": request.user_location.dict() if request.user_location else None}
+            metadata={"user_location": request.user_location.model_dump() if request.user_location else None}
         )
         
         # 4. Generate Agentic Response

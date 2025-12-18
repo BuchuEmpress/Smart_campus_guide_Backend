@@ -499,9 +499,9 @@ class TopicService:
                 'total_topics': total,
                 'total_views': totals.get('total_views', 0),
                 'total_searches': totals.get('total_searches', 0),
-                'by_status': {item['_id']: item['count'] for item in result.get('by_status', []) if item['_id']},
-                'by_department': {item['_id']: item['count'] for item in result.get('by_department', []) if item['_id']},
-                'by_option': {item['_id']: item['count'] for item in result.get('by_option', []) if item['_id']},
+                'by_status': {str(item['_id']): item['count'] for item in result.get('by_status', []) if item['_id']},
+                'by_department': {str(item['_id']): item['count'] for item in result.get('by_department', []) if item['_id']},
+                'by_option': {str(item['_id']): item['count'] for item in result.get('by_option', []) if item['_id']},
                 'by_year': {str(item['_id']): item['count'] for item in result.get('by_year', []) if item['_id']}
             }
             
