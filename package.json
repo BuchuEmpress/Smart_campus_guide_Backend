@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "@google/gemini-cli": "^0.21.2",
+    "@opentelemetry/sdk-metrics": "^2.2.0"
+  }
+}

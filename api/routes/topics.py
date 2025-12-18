@@ -413,7 +413,32 @@ async def topics_chat(
         )
         
         # 4. Generate Rich AI Response
-        system_context = f"You are a helpful academic advisor at the University of Bamenda. You are guiding a student in {request.department or 'Engineering'}. Use the [DATA] provided to give real concrete examples. Be academic yet encouraging."
+        
+        # --- Prompt Refinement for Context-Awareness ---
+        # Map option codes to full, descriptive names for better AI context.
+        option_full_names = {
+            "SEN": "Software Engineering",
+            "DAS": "Data Science",
+            "CNSM": "Computer Networks and System Maintenance"
+        }
+        
+        # Determine the specialization name. Default gracefully if option is not in the map or not provided.
+        specialization = "their chosen field"
+        if request.option:
+            specialization = option_full_names.get(request.option.upper(), request.option)
+
+        department_name = request.department or "the Engineering faculty"
+
+        # Create a more specific, refined system context.
+        system_context = (
+            f"You are a helpful academic advisor from the University of Bamenda, with a specialization in {specialization}. "
+            f"You are guiding a student from the {department_name} department. "
+            "Your goal is to help them with their final year project. Use the [DATA] provided in the prompt to give real, concrete examples. "
+            "Be academic, encouraging, and stay focused on the student's area of interest. "
+            "IMPORTANT: Structure your response using Markdown. Use headings, subheadings, bullet points, and bold text to improve readability. Do not use plain text for long answers."
+        )
+        # --- End of Refinement ---
+
         agent_prompt = f"{system_context}\n\nStudent: {request.message}{grounding_data}"
         
         ai_response = await gemini_service.generate_response(agent_prompt, context=history)
