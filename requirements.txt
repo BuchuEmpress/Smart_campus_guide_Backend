@@ -1,15 +1,15 @@
 # Core ML and Embeddings
 sentence-transformers==2.7.0
-numpy>=1.24.0,<2.0.0
-torch>=2.0.0
-scikit-learn==1.7.2
+numpy<2.0.0
+torch
+scikit-learn
 
 # Vector Database
-qdrant-client==1.16.0
+qdrant-client
 
 # Web API Framework
-fastapi==0.121.3
-uvicorn==0.38.0
+fastapi
+uvicorn
 
 # OSM Routing (NO API KEY NEEDED!)
 # requests is already here - that's all we need for OSM!
