@@ -185,21 +185,38 @@ async def delete_topic(topic_id: str):
 # ==========================
 @router.post("/search", response_model=models.TopicSearchResponse)
 async def search_topics(request: models.TopicSearchRequest):
-    """Search topics with filters (ALL CASE-INSENSITIVE)."""
-    # 1. Search MongoDB
-    search_func = topic_service.search_topics
-    mongo_results = await asyncio.to_thread(
-        search_func,
-        query=request.query,
-        department=request.department,
-        option=request.option,
-        year=request.year,
-        status=request.status,
-        limit=request.limit
+    """
+    Search topics with filters.
+    If placeholder filters are detected, it prioritizes a broad vector search.
+    """
+    # --- Start of Bug Fix ---
+    # Detect if all filters are the exact placeholders sent by the frontend
+    is_placeholder_filter = (
+        request.department == 'string' and
+        request.option == 'string' and
+        request.status == 'string' and
+        request.year == 0
     )
-    logger.info(f"MongoDB search found {len(mongo_results)} results")
+
+    mongo_results = []
+    # 1. Search MongoDB with specific filters only if they are NOT placeholders
+    if not is_placeholder_filter:
+        search_func = topic_service.search_topics
+        mongo_results = await asyncio.to_thread(
+            search_func,
+            query=request.query,
+            department=request.department,
+            option=request.option,
+            year=request.year,
+            status=request.status,
+            limit=request.limit
+        )
+        logger.info(f"MongoDB text search with specific filters found {len(mongo_results)} results")
+    else:
+        logger.info("Placeholder filters detected. Skipping restrictive text search and prioritizing vector search.")
+    # --- End of Bug Fix ---
     
-    # 2. Search Vector DB (if query provided)
+    # 2. Search Vector DB (if query provided) - This will now be the primary source for placeholder searches
     qdrant_results = []
     if request.query:
         try:
@@ -238,7 +255,7 @@ async def search_topics(request: models.TopicSearchRequest):
     # 3. Merge Results (Deduplicate by topic_id)
     merged_map = {}
     
-    # Add MongoDB results first
+    # Add MongoDB results first (will be empty in placeholder case)
     for t in mongo_results:
         t_id = str(t.get('topic_id') or t.get('_id'))
         merged_map[t_id] = t
