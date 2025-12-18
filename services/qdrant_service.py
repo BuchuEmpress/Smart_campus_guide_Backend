@@ -17,6 +17,8 @@ from qdrant_client.models import (
     VectorParams,
     PointStruct,
     Filter,
+    FieldCondition,
+    MatchValue,
 )
 
 load_dotenv()
@@ -24,6 +26,9 @@ load_dotenv()
 
 class QdrantService:
     """Handles all Qdrant vector database operations (async + robust)."""
+
+    # Class-level singleton for the heavy model
+    _model = None
 
     def __init__(self, load_model: bool = False, collection_name: str = "campus_locations"):
         # Load env values
@@ -41,7 +46,6 @@ class QdrantService:
             api_key=self.qdrant_key
         )
 
-        self.model = None
         self.collection_name = collection_name
         self.vector_size = 384
 
@@ -49,15 +53,16 @@ class QdrantService:
             self._load_model()
 
     # -----------------------------------------------------
-    # MODEL LOADING
+    # MODEL LOADING (SINGLETON PATTERN)
     # -----------------------------------------------------
     def _load_model(self):
-        if self.model is None:
+        if QdrantService._model is None:
             from sentence_transformers import SentenceTransformer
-            self.model = SentenceTransformer("all-MiniLM-L6-v2")
+            print("Loading SentenceTransformer model (Singleton)...")
+            QdrantService._model = SentenceTransformer("all-MiniLM-L6-v2")
 
     def _ensure_model_loaded(self):
-        if self.model is None:
+        if QdrantService._model is None:
             self._load_model()
 
     # -----------------------------------------------------
@@ -76,7 +81,7 @@ class QdrantService:
         try:
             self._ensure_model_loaded()
 
-            vector = self.model.encode(query).tolist()
+            vector = QdrantService._model.encode(query).tolist()
 
             # Run sync query in thread pool
             results = await asyncio.to_thread(
@@ -100,7 +105,7 @@ class QdrantService:
             return formatted
 
         except Exception as e:
-            print(f"❌ Qdrant search error: {e}")
+            print(f"Qdrant search error: {e}")
             return []
 
     # -----------------------------------------------------
@@ -108,26 +113,47 @@ class QdrantService:
     # -----------------------------------------------------
     async def get_by_id(self, location_id: str) -> Optional[Dict]:
         """
-        Qdrant cannot vector-search for IDs.
-        So we use scroll() to find exact match by payload.
+        Get exact location by ID using server-side filtering.
         """
         try:
-            scroll_result, _ = await asyncio.to_thread(
+            # Create filter for exact ID match
+            scroll_filter = Filter(
+                must=[
+                    FieldCondition(
+                        key="id",
+                        match=MatchValue(value=location_id)
+                    )
+                ]
+            )
+            
+            # Use scroll with filter
+            results, _ = await asyncio.to_thread(
                 self.client.scroll,
                 collection_name=self.collection_name,
-                with_payload=True,
-                limit=1000
+                scroll_filter=scroll_filter,
+                limit=1,
+                with_payload=True
             )
 
-            for point in scroll_result:
-                payload = point.payload
-                if str(payload.get("id")) == str(location_id):
-                    return payload
-
+            if results:
+                return results[0].payload
+            
             return None
 
         except Exception as e:
-            print(f"❌ Qdrant get_by_id error: {e}")
+            # Self-healing: Create index if missing
+            if "Index required" in str(e):
+                print("Index missing for 'id'. Creating index now...")
+                await asyncio.to_thread(
+                    self.client.create_payload_index,
+                    collection_name=self.collection_name,
+                    field_name="id",
+                    field_schema="keyword"
+                )
+                # Retry once
+                return await self.get_by_id(location_id)
+
+            print(f"Qdrant get_by_id error: {e}")
             return None
 
     # -----------------------------------------------------
@@ -163,7 +189,9 @@ class QdrantService:
 
             points = []
             for idx, item in enumerate(items):
-                vector = self.model.encode(item["name"]).tolist()
+                # Encode Name + Description for better sematic search coverage
+                text_to_encode = f"{item['name']} {item.get('description', '')}"
+                vector = QdrantService._model.encode(text_to_encode).tolist()
 
                 points.append(
                     PointStruct(
@@ -180,7 +208,124 @@ class QdrantService:
             )
 
         except Exception as e:
-            print(f"❌ Error uploading points: {e}")
+            print(f"Error uploading points: {e}")
+
+    # -----------------------------------------------------
+    # TEXT SEARCH (PAYLOAD LOOKUP)
+    # -----------------------------------------------------
+    async def search_by_text(
+        self,
+        query: str,
+        limit: int = 5
+    ) -> List[Dict]:
+        """
+        Search for text across multiple payload fields (name, description, id, etc.)
+        This is an 'aggressive' search to find 'in-between the lines' as requested by user.
+        """
+        try:
+            from qdrant_client.models import MatchText, MatchValue
+            
+            # Create a broad filter to check multiple fields
+            text_filter = Filter(
+                should=[
+                    FieldCondition(key="name", match=MatchText(text=query)),
+                    FieldCondition(key="description", match=MatchText(text=query)),
+                    FieldCondition(key="id", match=MatchText(text=query)) # Search in IDs too
+                ]
+            )
+
+            # Execution with auto-retry for indexing
+            try:
+                results, _ = await asyncio.to_thread(
+                    self.client.scroll,
+                    collection_name=self.collection_name,
+                    scroll_filter=text_filter,
+                    limit=limit,
+                    with_payload=True
+                )
+            except Exception as e:
+                # Handle missing text indexes
+                msg = str(e)
+                if any(x in msg for x in ["Index required", "Standard index", "text"]):
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Indexing issue detected: {msg}. Retrying with fresh indexes...")
+                    await self._create_text_indexes()
+                    
+                    # Retry once
+                    results, _ = await asyncio.to_thread(
+                        self.client.scroll,
+                        collection_name=self.collection_name,
+                        scroll_filter=text_filter,
+                        limit=limit,
+                        with_payload=True
+                    )
+                else:
+                    raise e
+
+            formatted = []
+            for hit in results:
+                payload = dict(hit.payload)
+                # Assign high score for direct text matches
+                payload["score"] = 0.99
+                formatted.append(payload)
+
+            return formatted
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Aggressive text search failed: {e}")
+            return []
+
+        except Exception as e:
+            # Self-healing: Create text indexes if missing
+            if "Index required" in str(e):
+                print("Text index missing. Creating indexes for 'name' and 'description'...")
+                try:
+                    await asyncio.to_thread(
+                        self.client.create_payload_index,
+                        collection_name=self.collection_name,
+                        field_name="name",
+                        field_schema="text"
+                    )
+                    await asyncio.to_thread(
+                        self.client.create_payload_index,
+                        collection_name=self.collection_name,
+                        field_name="description",
+                        field_schema="text"
+                    )
+                    # Retry once
+                    return await self.search_by_text(query, limit)
+                except Exception as idx_err:
+                    print(f"Failed to create indexes: {idx_err}")
+            
+            print(f"Qdrant text search error: {e}")
+            return []
+
+    async def _create_text_indexes(self):
+        """Creates text indexes for name and description."""
+        try:
+            await asyncio.to_thread(
+                self.client.create_payload_index,
+                collection_name=self.collection_name,
+                field_name="name",
+                field_schema="text"
+            )
+            await asyncio.to_thread(
+                self.client.create_payload_index,
+                collection_name=self.collection_name,
+                field_name="description",
+                field_schema="text"
+            )
+            await asyncio.to_thread(
+                self.client.create_payload_index,
+                collection_name=self.collection_name,
+                field_name="id",
+                field_schema="text"
+            )
+        except Exception as e:
+            print(f"Error creating indexes: {e}")
 
     # -----------------------------------------------------
     # COLLECTION INFO

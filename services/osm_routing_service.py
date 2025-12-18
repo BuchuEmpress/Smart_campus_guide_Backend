@@ -218,19 +218,22 @@ class OSMRoutingService:
             
             url = f"{NOMINATIM_API}/search"
             
+            # Bamenda Bounding Box (Approximate)
+            # North: 6.05, South: 5.90, West: 10.10, East: 10.30
             params = {
                 'q': query.strip(),
                 'format': 'json',
-                'limit': min(max(limit, 1), 10),  # Clamp between 1-10
-                'addressdetails': 1
+                'limit': min(max(limit, 1), 10),
+                'addressdetails': 1,
+                'viewbox': '10.10,6.05,10.30,5.90',  # West,North,East,South
+                'bounded': 1  # Strict bounding
             }
             
-            # Add location bias if provided
+            # Add location bias if provided (still useful within the box)
             if near:
                 if validate_coordinates(near[0], near[1]):
                     params['lat'] = near[0]
                     params['lon'] = near[1]
-                    params['bounded'] = 0  # Don't restrict to bbox, just prioritize
             
             # Nominatim requires User-Agent header
             headers = {

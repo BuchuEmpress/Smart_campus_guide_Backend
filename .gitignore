@@ -55,6 +55,7 @@ desktop.ini
 
 # Model Cache (downloaded AI models)
 models/
+!api/models/
 !api/models/topics_models.py
 .cache/
 

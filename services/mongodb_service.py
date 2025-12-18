@@ -124,6 +124,7 @@ class MongoDBService:
             self.topics_collection = self.db['topics']
             self.analytics_collection = self.db['search_analytics']
             self.popular_collection = self.db['popular_locations']
+            self.chat_collection = self.db['chat_history']
             
             # Create indexes for better query performance
             await self._create_indexes()
@@ -175,6 +176,10 @@ class MongoDBService:
             await self.popular_collection.create_index([("location_id", ASCENDING)], unique=True)
             await self.popular_collection.create_index([("search_count", DESCENDING)])
             await self.popular_collection.create_index([("rank", ASCENDING)])
+
+            # Chat history indexes
+            await self.db['chat_history'].create_index([("session_id", ASCENDING)])
+            await self.db['chat_history'].create_index([("timestamp", ASCENDING)])
             
             logger.info("✅ Database indexes created successfully")
             
@@ -516,6 +521,63 @@ class MongoDBService:
             
         except Exception as e:
             logger.error(f"Error getting popular locations: {str(e)}")
+            return []
+
+    # ============================================================================
+    # CHAT HISTORY OPERATIONS (For the Chatbots)
+    # ============================================================================
+
+    async def save_chat_message(self, session_id: str, chat_type: str, role: str, content: str, metadata: Optional[Dict] = None):
+        """
+        Save a message (either user or bot) to the chat history.
+        
+        Args:
+            session_id: The unique identifier for the user session
+            chat_type: 'location' or 'topics'
+            role: 'user' or 'assistant'
+            content: The text message
+            metadata: Any extra info (coordinates, intent, etc.)
+        """
+        try:
+            message = {
+                "session_id": session_id,
+                "chat_type": chat_type,
+                "role": role,
+                "content": content,
+                "timestamp": datetime.utcnow(),
+                "metadata": metadata or {}
+            }
+            await self.chat_collection.insert_one(message)
+            logger.debug(f"Saved {role} message for session {session_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error saving chat message: {e}")
+            return False
+
+    async def get_chat_history(self, session_id: str, chat_type: str, limit: int = 10) -> List[Dict]:
+        """
+        Retrieve recent chat history for a session.
+        
+        Args:
+            session_id: Unique session ID
+            chat_type: 'location' or 'topics'
+            limit: How many messages to retrieve (default: 10)
+        """
+        try:
+            cursor = self.chat_collection.find({
+                "session_id": session_id,
+                "chat_type": chat_type
+            }).sort("timestamp", DESCENDING).limit(limit)
+            
+            history = await cursor.to_list(length=limit)
+            
+            # Sort chronologically for the AI
+            history.reverse()
+            
+            # Formatted list of role/content
+            return [{"role": msg["role"], "content": msg["content"]} for msg in history]
+        except Exception as e:
+            logger.error(f"Error getting chat history: {e}")
             return []
 
 

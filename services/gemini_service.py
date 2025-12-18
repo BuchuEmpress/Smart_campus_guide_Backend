@@ -152,6 +152,40 @@ Return ONLY the JSON object:"""
             logger.error(f"Intent extraction error: {type(e).__name__}: {str(e)}")
             return self._fallback_intent(user_query)
 
+    async def extract_topic_intent(self, user_query: str) -> Dict[str, Any]:
+        """Extract intent from user query for final year project topics."""
+        try:
+            if not user_query or not user_query.strip():
+                return {"action": "chat", "query": ""}
+
+            prompt = f"""Analyze this request from a student regarding final year project topics.
+            Return ONLY a JSON object.
+
+            User query: "{user_query}"
+
+            Return JSON with these keys:
+            - "action": one of ["search", "suggest", "improve", "chat"]
+            - "query": the main topic or keyword mentioned
+            - "department": department name if mentioned
+            - "option": option name if mentioned
+            - "title": if they provided a title to improve
+
+            Examples:
+            "Show me some software engineering topics" -> {{"action": "search", "query": "software engineering", "department": "Computer Engineering", "option": "Software Engineering"}}
+            "Can you suggest 5 new AI topics?" -> {{"action": "suggest", "query": "AI", "count": 5}}
+            "Make this title better: Smart Campus Guide" -> {{"action": "improve", "title": "Smart Campus Guide"}}
+
+            Return ONLY the JSON object:"""
+
+            text = await self._call_model(prompt)
+            # Clean JSON
+            text = text.strip('` \n').replace('json\n', '', 1)
+            return json.loads(text)
+            
+        except Exception as e:
+            logger.error(f"Topic intent extraction error: {e}")
+            return {"action": "chat", "query": user_query}
+
     def _fallback_intent(self, query: str) -> Dict[str, Any]:
         """Fallback intent detection using simple keyword matching."""
         query_lower = query.lower()
@@ -174,12 +208,17 @@ Return ONLY the JSON object:"""
             }
         
         # Search keywords
-        if any(word in query_lower for word in ['where', 'find', 'locate', 'location of']):
+        if any(word in query_lower for word in ['where', 'find', 'locate', 'location of', 'show me']):
             # Extract location
             location_query = query_lower
-            for word in ['where is', 'where is the', 'find', 'locate']:
+            # Sort by length descending to match longest phrases first
+            separators = ['where is the', 'where is', 'where\'s the', 'where\'s', 'find the', 'find', 'locate the', 'locate', 'location of', 'show me the', 'show me']
+            for word in separators:
                 if word in query_lower:
-                    location_query = query_lower.split(word)[-1].strip('? .')
+                    try:
+                        location_query = query_lower.split(word, 1)[-1].strip('? .')
+                    except IndexError:
+                        pass
                     break
             
             return {
@@ -219,14 +258,21 @@ Return ONLY the JSON object:"""
                 for i, step in enumerate(steps[:5])  # Limit to 5 steps
             ])
 
-            prompt = f"""Convert these directions into friendly, natural language. No compass directions (north/south/east/west). Use simple language.
-
+            prompt = f"""You are a helpful student guide at the University of Bamenda. Give natural, human-like walking directions based on this route.
+            
 Route steps:
 {steps_text}
 
 Total time: {total_duration}
 
-Write 2-3 friendly sentences describing this walk:"""
+Instructions:
+- Don't say "Head north" or "turn east". Use "Turn left", "Turn right", "Go straight".
+- Mention landmarks if possible.
+- Keep it encouraging and simple, like you're talking to a friend.
+- Format: "Okay, to get there: First..." or similar natural phrasing.
+- Keep it under 3-4 sentences.
+
+Your Directions:"""
 
             text = await self._call_model(prompt)
             return text if text else f"Walk for about {total_duration} following the main path."

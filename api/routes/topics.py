@@ -15,13 +15,14 @@ Handles all topic-related endpoints:
 """
 
 import logging
-import asyncio # Import asyncio for running blocking calls in a thread pool
+import asyncio
 from typing import List, Dict
-from fastapi import APIRouter, HTTPException, Query, Path, Body
-
 from api.models import topics_models as models
 from services.topic_service import TopicService
 from services.topic_intelligence_service import TopicIntelligenceService
+from services.gemini_service import GeminiService
+from services.mongodb_service import MongoDBService
+from fastapi import APIRouter, HTTPException, Query, Path, Body, Depends
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -31,10 +32,15 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/topics", tags=["Topics"])
 
 # Initialize services
-# TopicService creates its own synchronous MongoDB connection internally
 topic_service = TopicService()
-# Note: TopicIntelligenceService relies on TopicService, which is blocking.
 topic_ai = TopicIntelligenceService(topic_service=topic_service)
+
+# Dependencies
+def get_gemini_service():
+    return GeminiService()
+
+def get_mongodb_service():
+    return MongoDBService()
 
 # ==========================
 # HELPER FUNCTIONS
@@ -328,3 +334,80 @@ async def check_similarity(request: models.TopicSimilarityRequest):
     )
     
     return models.TopicSimilarityResponse(similar_topics=similar)
+
+
+# =============== CHATBOT ENDPOINT ===============
+
+@router.post("/chat", response_model=models.TopicChatResponse)
+async def topics_chat(
+    request: models.TopicChatRequest,
+    gemini_service: GeminiService = Depends(get_gemini_service),
+    mongodb_service: MongoDBService = Depends(get_mongodb_service)
+):
+    """Conversational AI Agent for Final Year Project Guidance - Fully Integrated."""
+    try:
+        await mongodb_service.connect()
+        history = await mongodb_service.get_chat_history(request.session_id, "topics")
+        
+        # 1. Extract Intent
+        intent = await gemini_service.extract_topic_intent(request.message)
+        action = intent.get("action", "chat")
+        grounding_data = ""
+        metadata = {"action_taken": action}
+
+        # 2. Retrieve Data based on Action
+        if action == "search":
+            q = intent.get("query") or request.message
+            func = topic_service.search_topics
+            results = await asyncio.to_thread(func, query=q, limit=3)
+            if results:
+                found = [t.get("title") for t in results]
+                grounding_data = f"\n[DATABASE INFO: Found these existing topics in our library: {', '.join(found)}]"
+                metadata["results_count"] = len(results)
+
+        elif action == "suggest":
+            dept = intent.get("department") or request.department or "Computer Engineering"
+            opt = intent.get("option") or request.option or "Software Engineering"
+            # Get real AI suggestions
+            suggestions = await topic_ai.suggest_topics(department=dept, option=opt, count=3)
+            if suggestions:
+                titles = [s.get("title") for s in suggestions]
+                grounding_data = f"\n[AI SUGGESTIONS: I generated these potential ideas: {', '.join(titles)}]"
+                metadata["suggestions_count"] = len(suggestions)
+
+        elif action == "improve" and intent.get("title"):
+            improvement = await topic_ai.improve_topic(
+                title=intent.get("title"),
+                description="", # Optional
+                option=request.option or "Software Engineering"
+            )
+            grounding_data = f"\n[AI IMPROVEMENT: Suggested Title: {improvement.get('improved_title')}. Why: {improvement.get('improved_description')}]"
+            metadata["improved"] = True
+
+        # 3. Save user message
+        await mongodb_service.save_chat_message(
+            request.session_id, "topics", "user", request.message,
+            metadata={"department": request.department, "option": request.option}
+        )
+        
+        # 4. Generate Rich AI Response
+        system_context = f"You are a helpful academic advisor at the University of Bamenda. You are guiding a student in {request.department or 'Engineering'}. Use the [DATA] provided to give real concrete examples. Be academic yet encouraging."
+        agent_prompt = f"{system_context}\n\nStudent: {request.message}{grounding_data}"
+        
+        ai_response = await gemini_service.generate_response(agent_prompt, context=history)
+        
+        # 5. Save assistant response
+        await mongodb_service.save_chat_message(request.session_id, "topics", "assistant", ai_response, metadata=metadata)
+        await mongodb_service.disconnect()
+        
+        return models.TopicChatResponse(message=ai_response, session_id=request.session_id, metadata=metadata)
+        
+    except Exception as e:
+        logger.error(f"Topics Agent error: {e}")
+        try: await mongodb_service.disconnect()
+        except: pass
+        return models.TopicChatResponse(
+            status="error",
+            message="I'm here to help with your project, but hit a small snag. What research areas are you interested in?",
+            session_id=request.session_id
+        )
