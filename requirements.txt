@@ -35,4 +35,5 @@ requests==2.32.5
 
 # Database
 pymongo==4.10.1  # For MongoDB 
+motor==3.6.0     # Async driver for MongoDB (required for FastAPI)
 
