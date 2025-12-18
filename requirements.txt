@@ -1,8 +1,5 @@
-# Core ML and Embeddings
-sentence-transformers==2.7.0
+# Core Utilities
 numpy<2.0.0
-torch
-scikit-learn
 
 # Vector Database
 qdrant-client

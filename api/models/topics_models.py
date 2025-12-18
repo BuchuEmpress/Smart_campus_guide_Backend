@@ -125,10 +125,14 @@ class TopicSearchResponse(BaseModel):
 class TopicStatsResponse(BaseModel):
     """Aggregated statistics."""
     total_topics: int
+    total_views: Optional[int] = 0
+    total_searches: Optional[int] = 0
     by_department: Dict[str, int]
     by_option: Dict[str, int]
+    by_category: Optional[Dict[str, int]] = None  # Alias for by_option
     by_year: Dict[str, int] 
     by_status: Optional[Dict[str, int]] = None
+    by_difficulty: Optional[Dict[str, int]] = None  # Alias for by_status
 
 
 # ==========================
@@ -146,7 +150,9 @@ class TopicImproveResponse(BaseModel):
     improved_title: str
     improved_description: str
     suggested_keywords: List[str]
+    suggested_tags: Optional[List[str]] = None  # Alias for suggested_keywords
     suggested_status: Optional[str] = "reserved"
+    suggested_difficulty: Optional[str] = None  # Alias for suggested_status
 
 
 class TopicSimilarityResponse(BaseModel):

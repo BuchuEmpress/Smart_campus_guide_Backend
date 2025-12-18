@@ -480,7 +480,12 @@ class TopicService:
                         'by_status': [{'$group': {'_id': '$status', 'count': {'$sum': 1}}}],
                         'by_department': [{'$group': {'_id': '$department', 'count': {'$sum': 1}}}],
                         'by_option': [{'$group': {'_id': '$option', 'count': {'$sum': 1}}}],
-                        'by_year': [{'$group': {'_id': '$year', 'count': {'$sum': 1}}}]
+                        'by_year': [{'$group': {'_id': '$year', 'count': {'$sum': 1}}}],
+                        'totals': [{'$group': {
+                            '_id': None, 
+                            'total_views': {'$sum': '$views'},
+                            'total_searches': {'$sum': '$searches'}
+                        }}]
                     }
                 }
             ]
@@ -488,8 +493,12 @@ class TopicService:
             agg_result = list(collection.aggregate(pipeline))
             result = agg_result[0] if agg_result else {}
             
+            totals = result.get('totals', [{}])[0] if result.get('totals') else {}
+            
             stats = {
                 'total_topics': total,
+                'total_views': totals.get('total_views', 0),
+                'total_searches': totals.get('total_searches', 0),
                 'by_status': {item['_id']: item['count'] for item in result.get('by_status', []) if item['_id']},
                 'by_department': {item['_id']: item['count'] for item in result.get('by_department', []) if item['_id']},
                 'by_option': {item['_id']: item['count'] for item in result.get('by_option', []) if item['_id']},

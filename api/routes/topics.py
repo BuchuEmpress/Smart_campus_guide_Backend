@@ -29,7 +29,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize router
-router = APIRouter(prefix="/api/topics", tags=["Topics"])
+router = APIRouter(prefix="/topics", tags=["Topics"])
 
 # Initialize services
 topic_service = TopicService()
@@ -271,10 +271,14 @@ async def get_topic_statistics():
     
     return models.TopicStatsResponse(
         total_topics=stats.get('total_topics', 0),
+        total_views=stats.get('total_views', 0),
+        total_searches=stats.get('total_searches', 0),
         by_department=stats.get('by_department', {}),
         by_option=stats.get('by_option', {}),
+        by_category=stats.get('by_option', {}),  # Map to legacy name
         by_year=stats.get('by_year', {}),
-        by_status=stats.get('by_status', {})
+        by_status=stats.get('by_status', {}),
+        by_difficulty=stats.get('by_status', {})  # Map to legacy name
     )
 
 # ==========================
@@ -294,6 +298,20 @@ async def suggest_topics(request: models.TopicSuggestionRequest):
         keywords=request.keywords,
         user_request=request.user_request
     )
+    
+    # ✅ FIX: Ensure each suggestion has BOTH modern and legacy keys
+    # Maps internal keys (difficulty, tags) -> modern API keys (status, keywords)
+    for s in suggestions:
+        if 'difficulty' in s and 'status' not in s:
+            s['status'] = s['difficulty']
+        if 'tags' in s and 'keywords' not in s:
+            s['keywords'] = s['tags']
+        # Also ensure legacy keys exist if service returned modern ones (just in case)
+        if 'status' in s and 'difficulty' not in s:
+            s['difficulty'] = s['status']
+        if 'keywords' in s and 'tags' not in s:
+            s['tags'] = s['keywords']
+            
     return models.TopicSuggestionResponse(suggestions=suggestions)
 
 @router.post("/ai/improve", response_model=models.TopicImproveResponse)
@@ -311,11 +329,17 @@ async def improve_topic(request: models.TopicImproveRequest):
     )
     
     # ✅ FIX: Map response keys to match TopicImproveResponse model
+    # Provides BOTH modern and legacy names for "no-stress" compatibility
+    tags = result.get('suggested_tags', [])
+    difficulty = result.get('suggested_difficulty', 'reserved')
+    
     return models.TopicImproveResponse(
         improved_title=result.get('improved_title', request.title),
         improved_description=result.get('improved_description', request.description),
-        suggested_keywords=result.get('suggested_tags', []),  # Map tags→keywords
-        suggested_status=result.get('suggested_difficulty', 'reserved')  # Map difficulty→status
+        suggested_keywords=tags, 
+        suggested_tags=tags,
+        suggested_status=difficulty,
+        suggested_difficulty=difficulty
     )
 
 @router.post("/ai/similarity", response_model=models.TopicSimilarityResponse)
@@ -324,12 +348,10 @@ async def check_similarity(request: models.TopicSimilarityRequest):
     Check semantic similarity of a topic.
     NOW USES 'option' field correctly and is CASE-INSENSITIVE!
     """
-    # ✅ FIX: Use 'option' parameter name
-    similarity_func = topic_ai.check_similarity
-    similar = await asyncio.to_thread(
-        similarity_func,
+    # Directly await the now-async method
+    similar = await topic_ai.check_similarity(
         title=request.title,
-        option=request.option,  # Changed from category=request.option
+        option=request.option,
         threshold=request.threshold
     )
     

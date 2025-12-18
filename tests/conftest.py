@@ -27,19 +27,9 @@ os.environ["DEBUG_MODE"] = "True"
 # 🛑 PATCH MEMORY-INTENSIVE SERVICES (SECOND STEP)
 # =======================================================================
 
-# 1. Patch the TopicIntelligenceService's memory-heavy dependency 
-# (Assuming the SentenceTransformer model is the memory bottleneck)
-with patch('services.topic_intelligence_service.SentenceTransformer'):
-    
-    # 2. Patch the GeminiService class, targeting its presumed definition module.
-    # The previous error confirms it's not an attribute of qdrant_service.
-    # We must patch the class itself (likely defined in services/gemini_service.py)
-    with patch('services.gemini_service.GeminiService'):
-        
-        # 3. Import the main app
-        from api.main import app
-        
-# Patches automatically end here.
+# 1. Import the main app directly
+# (No need to patch SentenceTransformer as it's been removed)
+from api.main import app
 
 
 # ============================================================================

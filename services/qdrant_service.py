@@ -20,6 +20,7 @@ from qdrant_client.models import (
     FieldCondition,
     MatchValue,
 )
+from services.gemini_service import GeminiService
 
 load_dotenv()
 
@@ -30,7 +31,7 @@ class QdrantService:
     # Class-level singleton for the heavy model
     _model = None
 
-    def __init__(self, load_model: bool = False, collection_name: str = "campus_locations"):
+    def __init__(self, collection_name: str = "campus_locations"):
         # Load env values
         self.qdrant_url = os.getenv("QDRANT_HOST")
         self.qdrant_key = os.getenv("QDRANT_API_KEY")
@@ -47,23 +48,10 @@ class QdrantService:
         )
 
         self.collection_name = collection_name
-        self.vector_size = 384
+        self.vector_size = 768  # GEMINI EMBEDDINGS SIZE
+        self.gemini = GeminiService()
 
-        if load_model:
-            self._load_model()
-
-    # -----------------------------------------------------
-    # MODEL LOADING (SINGLETON PATTERN)
-    # -----------------------------------------------------
-    def _load_model(self):
-        if QdrantService._model is None:
-            from sentence_transformers import SentenceTransformer
-            print("Loading SentenceTransformer model (Singleton)...")
-            QdrantService._model = SentenceTransformer("all-MiniLM-L6-v2")
-
-    def _ensure_model_loaded(self):
-        if QdrantService._model is None:
-            self._load_model()
+    # Removed local model loading to save 500MB+ RAM
 
     # -----------------------------------------------------
     # SEMANTIC SEARCH (FIXED)
@@ -79,9 +67,8 @@ class QdrantService:
         self.client.search_points()
         """
         try:
-            self._ensure_model_loaded()
-
-            vector = QdrantService._model.encode(query).tolist()
+            # Use Gemini for embeddings (remote call)
+            vector = await self.gemini.embed_text(query)
 
             # Run sync query in thread pool
             results = await asyncio.to_thread(
@@ -185,14 +172,12 @@ class QdrantService:
     async def upload_points(self, items: List[Dict]):
         """Upload vectorized locations to Qdrant."""
         try:
-            self._ensure_model_loaded()
-
             points = []
-            for idx, item in enumerate(items):
-                # Encode Name + Description for better sematic search coverage
-                text_to_encode = f"{item['name']} {item.get('description', '')}"
-                vector = QdrantService._model.encode(text_to_encode).tolist()
+            # Batch encode for efficiency
+            texts = [f"{item['name']} {item.get('description', '')}" for item in items]
+            vectors = await self.gemini.embed_batch(texts)
 
+            for idx, (item, vector) in enumerate(zip(items, vectors)):
                 points.append(
                     PointStruct(
                         id=item.get("id", idx),

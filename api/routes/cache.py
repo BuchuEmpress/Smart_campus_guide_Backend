@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Initialize router
-router = APIRouter(prefix="/api/cache", tags=["Cache"])
+router = APIRouter(prefix="/cache", tags=["Cache"])
 
 # Initialize services
 cache_service = None

@@ -53,7 +53,7 @@ class GeminiService:
             prompt: The prompt to send
             **kwargs: Additional generation config
             
-        Returns:
+            Returns:
             Generated text response
         """
         try:
@@ -79,6 +79,45 @@ class GeminiService:
             
         except Exception as e:
             logger.error(f"Gemini API call failed: {type(e).__name__}: {str(e)}")
+            raise
+
+    async def embed_text(self, text: str, task_type: str = "retrieval_query") -> List[float]:
+        """
+        Generate embedding for a single string using Gemini.
+        Default model: text-embedding-004 (768 dimensions)
+        """
+        try:
+            model = "text-embedding-004"
+            response = await self.client.aio.models.embed_content(
+                model=model,
+                contents=text,
+                config={
+                    "task_type": task_type,
+                    "output_dimensionality": 768
+                }
+            )
+            return response.embeddings[0].values
+        except Exception as e:
+            logger.error(f"Gemini embedding failed: {e}")
+            raise
+
+    async def embed_batch(self, texts: List[str], task_type: str = "retrieval_document") -> List[List[float]]:
+        """
+        Generate embeddings for a list of strings.
+        """
+        try:
+            model = "text-embedding-004"
+            response = await self.client.aio.models.embed_content(
+                model=model,
+                contents=texts,
+                config={
+                    "task_type": task_type,
+                    "output_dimensionality": 768
+                }
+            )
+            return [e.values for e in response.embeddings]
+        except Exception as e:
+            logger.error(f"Gemini batch embedding failed: {e}")
             raise
 
     async def extract_intent(self, user_query: str) -> Dict[str, Any]:

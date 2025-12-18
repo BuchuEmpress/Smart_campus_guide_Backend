@@ -19,8 +19,7 @@ import json
 from typing import List, Dict, Optional, Any, Union
 import numpy as np
 
-# Keep the import, but move the initialization out of __init__
-from sentence_transformers import SentenceTransformer
+# No longer using local sentence-transformers
 
 # Assuming these are defined in the project structure
 from services.gemini_service import GeminiService
@@ -50,54 +49,30 @@ class TopicIntelligenceService:
         self.topic_service = topic_service or TopicService()
         self.gemini = gemini_service or GeminiService()
         
-        # Set model to None for lazy loading
-        self.model: Optional[SentenceTransformer] = None
-        self.embedding_size = 384  # all-MiniLM-L6-v2 size
+        # Use Gemini for embeddings
+        self.embedding_size = 768  # text-embedding-004 size
         
-        logger.info("Topic intelligence service initialized. Embedding model will be loaded lazily.")
+        logger.info("Topic intelligence service initialized. Using Gemini for embeddings.")
         
     
     # ====================================================================
     # LAZY LOADING METHOD
     # ====================================================================
-    def _ensure_model_loaded(self):
-        """
-        Loads the SentenceTransformer model (all-MiniLM-L6-v2) if it hasn't been loaded yet.
-        
-        This prevents the memory-intensive operation from running during application import,
-        fixing the memory/paging file OSErrors during test collection.
-        
-        Raises:
-            Exception: If the model fails to load.
-        """
-        if self.model is None:
-            logger.info("Loading embedding model for similarity checking (Lazy Load)...")
-            try:
-                # The heavy operation, now deferred
-                self.model = SentenceTransformer('all-MiniLM-L6-v2')
-                logger.info("Embedding model loaded successfully ✅")
-            except Exception as e:
-                logger.error(f"Failed to load SentenceTransformer model: {e}")
-                raise
+    # Removed local model loading to save memory
     
     # ====================================================================
     # CENTRALIZED EMBEDDING METHOD (for reuse by check_similarity)
     # ====================================================================
-    def get_embedding(self, text: Union[str, List[str]]) -> np.ndarray:
+    async def get_embedding(self, text: Union[str, List[str]]) -> np.ndarray:
         """
         Generates a vector embedding (or batch embeddings) for the given text(s).
-
-        The method ensures the underlying SentenceTransformer model is loaded first.
-        
-        Args:
-            text: A single string or a list of strings to be embedded.
-
-        Returns:
-            A NumPy array representing the embedding vector(s).
         """
-        self._ensure_model_loaded() # Load model if necessary
-        # The SentenceTransformer encode method is synchronous and returns a numpy array
-        return self.model.encode(text)
+        if isinstance(text, list):
+            embeddings = await self.gemini.embed_batch(text)
+            return np.array(embeddings)
+        else:
+            embedding = await self.gemini.embed_text(text)
+            return np.array(embedding)
 
     # ====================================================================
     # GEMINI AI METHODS (FIXED TO USE 'option')
@@ -338,17 +313,9 @@ NO markdown, NO explanations, ONLY the JSON object.
     # EMBEDDING & SIMILARITY METHODS (FIXED TO USE 'option')
     # ====================================================================
     
-    def check_similarity(self, title: str, option: str, threshold: float = 0.8) -> List[Dict]:
+    async def check_similarity(self, title: str, option: str, threshold: float = 0.8) -> List[Dict]:
         """
         Check if topic is similar to existing topics using embeddings.
-
-        Args:
-            title: Topic title to check.
-            option: Option/specialization to search in (case-insensitive).
-            threshold: Similarity threshold (0-1).
-        
-        Returns:
-            List of similar topics with similarity scores.
         """
         try:
             logger.info(f"Checking similarity for: '{title}' in option='{option}'")
@@ -365,14 +332,14 @@ NO markdown, NO explanations, ONLY the JSON object.
             
             existing_titles = [topic['title'] for topic in existing]
             
-            # 2. Generate embeddings in efficient batch calls (Now uses the centralized method)
-            logger.info(f"Generating batch embeddings for {len(existing_titles)} existing topics (Lazy Load Triggered)...")
+            # 2. Generate embeddings in efficient batch calls
+            logger.info(f"Generating batch embeddings for {len(existing_titles)} existing topics via Gemini...")
             
-            # New topic embedding (uses the new centralized method)
-            new_embedding = self.get_embedding(title)
+            # New topic embedding
+            new_embedding = await self.get_embedding(title)
             
             # Batch encode existing topics
-            existing_embeddings = self.get_embedding(existing_titles)
+            existing_embeddings = await self.get_embedding(existing_titles)
             
             # 3. Calculate similarities (Cosine similarity: dot product of L2-normalized vectors)
             # Normalize vectors for correct dot product similarity calculation
