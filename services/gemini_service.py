@@ -240,6 +240,50 @@ Return ONLY the JSON object:"""
             logger.error(f"Topic intent extraction error: {e}")
             return {"action": "chat", "query": user_query}
 
+    async def extract_master_intent(self, user_query: str) -> Dict[str, str]:
+        """
+        Classify the user's query into broad categories: 'topic_query', 'navigation_query', or 'general_chat'.
+        This acts as a high-level router for incoming user messages.
+        """
+        try:
+            if not user_query or not user_query.strip():
+                return {"intent_type": "general_chat"}
+
+            prompt = f"""Analyze the following user query and determine its primary intent.
+            Return ONLY a JSON object with a single key: "intent_type".
+
+            Possible intent_types:
+            - "topic_query": The user is asking about final year projects, academic topics, research, project ideas, courses, departments, or anything related to academic guidance.
+            - "navigation_query": The user is asking for directions, location of a building, office, classroom, or any campus facility, or general campus information.
+            - "general_chat": The user is greeting, making a general statement, or the query does not fit into the above categories.
+
+            User query: "{user_query}"
+
+            Return ONLY the JSON object, for example: {{"intent_type": "topic_query"}}"""
+
+            text = await self._call_model(prompt)
+            # Clean markdown formatting and parse JSON
+            text = text.strip()
+            if text.startswith('```json'):
+                text = text[7:]
+            if text.startswith('```'):
+                text = text[3:]
+            if text.endswith('```'):
+                text = text[:-3]
+            text = text.strip()
+            
+            intent = json.loads(text)
+            intent_type = intent.get("intent_type", "general_chat")
+            logger.info(f"✅ Master intent extracted: {intent_type}")
+            return {"intent_type": intent_type}
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Failed to parse Gemini JSON response for master intent: {e}. Raw response: {text[:500]}")
+            return {"intent_type": "general_chat"}
+        except Exception as e:
+            logger.error(f"Master intent extraction error: {e}")
+            return {"intent_type": "general_chat"}
+
     def _fallback_intent(self, query: str) -> Dict[str, Any]:
         """Fallback intent detection using simple keyword matching."""
         query_lower = query.lower()

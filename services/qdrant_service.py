@@ -158,6 +158,27 @@ class QdrantService:
                     distance=Distance.COSINE
                 )
             )
+            # Create a keyword index for the 'option' field
+            await self.client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name="option",
+                field_schema="keyword"
+            )
+            await self.client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name="department",
+                field_schema="keyword"
+            )
+            await self.client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name="status",
+                field_schema="keyword"
+            )
+            await self.client.create_payload_index(
+                collection_name=self.collection_name,
+                field_name="year",
+                field_schema="integer"
+            )
             return True
 
         return False

@@ -23,7 +23,9 @@ import numpy as np
 
 # Assuming these are defined in the project structure
 from services.gemini_service import GeminiService
-from services.topic_service import TopicService 
+from services.topic_service import TopicService
+from services.qdrant_service import QdrantService # Import QdrantService
+from qdrant_client.models import Filter, FieldCondition, MatchValue # Import Qdrant models
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -48,11 +50,13 @@ class TopicIntelligenceService:
         """Initialize intelligence service."""
         self.topic_service = topic_service or TopicService()
         self.gemini = gemini_service or GeminiService()
+        # Initialize Qdrant Service for topic vector search
+        self.qdrant_service = QdrantService(collection_name="topics")
         
         # Use Gemini for embeddings
         self.embedding_size = 768  # text-embedding-004 size
         
-        logger.info("Topic intelligence service initialized. Using Gemini for embeddings.")
+        logger.info("Topic intelligence service initialized. Using Gemini for embeddings and Qdrant for vector search.")
         
     
     # ====================================================================
@@ -313,64 +317,53 @@ NO markdown, NO explanations, ONLY the JSON object.
     # EMBEDDING & SIMILARITY METHODS (FIXED TO USE 'option')
     # ====================================================================
     
-    async def check_similarity(self, title: str, option: str, threshold: float = 0.8) -> List[Dict]:
+    async def check_similarity(self, title: str, option: str, threshold: float = 0.7) -> List[Dict]:
         """
-        Check if topic is similar to existing topics using embeddings.
+        Check if topic is similar to existing topics using Qdrant vector search.
         """
         try:
-            logger.info(f"Checking similarity for: '{title}' in option='{option}'")
-            
-            # ✅ FIX: Use 'option' field (case-insensitive via TopicService)
-            existing = self.topic_service.list_topics(
-                filter_query={'option': option},  # Changed from 'category'
-                limit=100
-            )
-            
-            if not existing:
-                logger.info(f"No existing topics found for option '{option}'")
-                return []
-            
-            existing_titles = [topic['title'] for topic in existing]
-            
-            # 2. Generate embeddings in efficient batch calls
-            logger.info(f"Generating batch embeddings for {len(existing_titles)} existing topics via Gemini...")
-            
-            # New topic embedding
-            new_embedding = await self.get_embedding(title)
-            
-            # Batch encode existing topics
-            existing_embeddings = await self.get_embedding(existing_titles)
-            
-            # 3. Calculate similarities (Cosine similarity: dot product of L2-normalized vectors)
-            # Normalize vectors for correct dot product similarity calculation
-            new_embedding_norm = new_embedding / np.linalg.norm(new_embedding)
-            # Normalize existing embeddings matrix (axis=1 normalizes rows)
-            existing_embeddings_norm = existing_embeddings / np.linalg.norm(existing_embeddings, axis=1, keepdims=True)
-            
-            # Calculate cosine similarity (dot product of normalized vectors)
-            similarities = np.dot(existing_embeddings_norm, new_embedding_norm)
+            logger.info(f"Checking Qdrant similarity for: '{title}' in option='{option}' with threshold={threshold}")
 
-            # 4. Filter results
+            # Construct Qdrant filter for the given option
+            # Assuming 'option' is stored as a keyword in Qdrant payload
+            qdrant_filter = Filter(
+                must=[
+                    FieldCondition(key="option", match=MatchValue(value=option))
+                ]
+            )
+
+            # Perform semantic search using QdrantService
+            # The search query will be embedded by GeminiService within QdrantService.search()
+            qdrant_results = await self.qdrant_service.search(
+                query=title,
+                limit=10, # Get top 10 most similar topics
+                filter_params=qdrant_filter
+            )
+
             similar_topics = []
-            for i, similarity in enumerate(similarities):
-                if similarity >= threshold:
-                    topic = existing[i]
+            for hit in qdrant_results:
+                # Qdrant's search returns payload directly, which contains topic details
+                # and a 'score' field for similarity
+                score = hit.get('score', 0.0)
+                if score >= threshold:
+                    # Extract required fields from the Qdrant hit payload
+                    topic_payload = hit # 'hit' is already the formatted payload with score
+                    
                     similar_topics.append({
-                        'topic_id': str(topic.get('_id', topic.get('topic_id', ''))),
-                        'title': topic['title'],
-                        'similarity_score': float(similarity),
-                        'status': topic.get('status', 'unknown')
+                        'topic_id': str(topic_payload.get('topic_id', topic_payload.get('id', ''))), # Prioritize topic_id
+                        'title': topic_payload.get('title', 'Unknown Title'),
+                        'similarity_score': float(score),
+                        'status': topic_payload.get('status', 'unknown')
                     })
             
-            # 5. Sort and return
+            # Sort by similarity score (Qdrant results are usually already sorted, but good practice)
             similar_topics.sort(key=lambda x: x['similarity_score'], reverse=True)
             
-            logger.info(f"Found {len(similar_topics)} similar topics (threshold: {threshold})")
+            logger.info(f"Found {len(similar_topics)} similar topics via Qdrant (threshold: {threshold})")
             return similar_topics
             
         except Exception as e:
-            # We catch the potential failure from _ensure_model_loaded here too
-            logger.error(f"Error checking similarity: {str(e)}")
+            logger.error(f"Error checking Qdrant similarity: {str(e)}")
             return []
     
     

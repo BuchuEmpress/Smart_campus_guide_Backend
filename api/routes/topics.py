@@ -210,6 +210,153 @@ async def delete_topic(topic_id: str):
     await asyncio.to_thread(delete_func, topic_id)
     # Return 204 No Content
 
+
+
+
+@router.post("/sync", status_code=202)
+async def trigger_sync():
+    """Trigger a background sync of missing topics to Qdrant.
+    Returns 202 Accepted and starts sync in background. Frontend can poll `/sync/status`.
+    """
+    from services.qdrant_service import QdrantService
+    import datetime
+
+    if _sync_status.get('syncing'):
+        return {"detail": "Sync already in progress"}
+
+    q = QdrantService(collection_name="topics")
+
+    async def _run_sync():
+        _sync_status['syncing'] = True
+        _sync_status['last_error'] = None
+        try:
+            await q.sync_missing_topics()
+            info = await q.get_collection_info()
+            pts = getattr(info, 'points_count', 0) or 0
+            _sync_status['last_count'] = int(pts)
+            _sync_status['last_run'] = datetime.datetime.utcnow().isoformat()
+        except Exception as e:
+            _sync_status['last_error'] = str(e)
+        finally:
+            _sync_status['syncing'] = False
+
+    asyncio.create_task(_run_sync())
+    return {"detail": "Sync started"}
+
+
+@router.get("/sync/status")
+async def sync_status():
+    """Return last sync status for frontend polling."""
+    return _sync_status
+
+# ========================== 
+# STATISTICS ENDPOINT
+# ========================== 
+@router.get("/stats/overview", response_model=models.TopicStatsResponse)
+async def get_topic_statistics():
+    """Get topic statistics."""
+    stats_func = topic_service.get_statistics
+    stats = await asyncio.to_thread(stats_func)
+    
+    return models.TopicStatsResponse(
+        total_topics=stats.get('total_topics', 0),
+        total_views=stats.get('total_views', 0),
+        total_searches=stats.get('total_searches', 0),
+        by_department=stats.get('by_department', {}),
+        by_option=stats.get('by_option', {}),
+        by_category=stats.get('by_option', {}),  # Map to legacy name
+        by_year=stats.get('by_year', {}),
+        by_status=stats.get('by_status', {}),
+        by_difficulty=stats.get('by_status', {})  # Map to legacy name
+    )
+
+# ========================== 
+# AI-POWERED ENDPOINTS (FIXED)
+# ========================== 
+@router.post("/ai/suggest", response_model=models.TopicSuggestionResponse)
+async def suggest_topics(request: models.TopicSuggestionRequest):
+    """
+    Generate AI-powered topic suggestions.
+    NOW USES 'option' field correctly, prioritizing subgroup!
+    """
+    # Determine option to use, prioritizing subgroup
+    option_to_use = request.subgroup if request.subgroup else request.option
+    
+    suggestions = await topic_ai.suggest_topics(
+        option=option_to_use,  # Prioritize subgroup if provided
+        department=request.department,
+        count=request.count,
+        keywords=request.keywords,
+        user_request=request.user_request
+    )
+    
+    # ✅ FIX: Ensure each suggestion has BOTH modern and legacy keys
+    # Maps internal keys (difficulty, tags) -> modern API keys (status, keywords)
+    for s in suggestions:
+        if 'difficulty' in s and 'status' not in s:
+            s['status'] = s['difficulty']
+        if 'tags' in s and 'keywords' not in s:
+            s['keywords'] = s['tags']
+        # Also ensure legacy keys exist if service returned modern ones (just in case)
+        if 'status' in s and 'difficulty' not in s:
+            s['difficulty'] = s['status']
+        if 'keywords' in s and 'tags' not in s:
+            s['tags'] = s['keywords']
+            
+    return models.TopicSuggestionResponse(suggestions=suggestions)
+
+@router.post("/ai/improve", response_model=models.TopicImproveResponse)
+async def improve_topic(request: models.TopicImproveRequest):
+    """
+    Improve an existing topic using AI.
+    NOW USES 'option' field correctly, prioritizing subgroup!
+    """
+    # Determine option to use, prioritizing subgroup
+    option_to_use = request.subgroup if request.subgroup else request.option
+    
+    result = await topic_ai.improve_topic(
+        title=request.title,
+        description=request.description,
+        option=option_to_use,  # Prioritize subgroup if provided
+        user_instruction=request.user_instruction
+    )
+    
+    # ✅ FIX: Map response keys to match TopicImproveResponse model
+    # Provides BOTH modern and legacy names for "no-stress" compatibility
+    tags = result.get('suggested_tags', [])
+    difficulty = result.get('suggested_difficulty', 'reserved')
+    
+    return models.TopicImproveResponse(
+        improved_title=result.get('improved_title', request.title),
+        improved_description=result.get('improved_description', request.description),
+        suggested_keywords=tags, 
+        suggested_tags=tags,
+        suggested_status=difficulty,
+        suggested_difficulty=difficulty
+    )
+
+@router.post("/ai/similarity", response_model=models.TopicSimilarityResponse)
+async def check_similarity(request: models.TopicSimilarityRequest):
+    """
+    Check semantic similarity of a topic.
+    NOW USES 'option' field correctly and is CASE-INSENSITIVE, prioritizing subgroup!
+    """
+    try:
+        # Determine option to use, prioritizing subgroup
+        option_to_use = request.subgroup if request.subgroup else request.option
+        
+        similar = await topic_ai.check_similarity(
+            title=request.title,
+            option=option_to_use,  # Prioritize subgroup if provided
+            threshold=request.threshold
+        )
+        
+        return models.TopicSimilarityResponse(similar_topics=similar)
+    except Exception as e:
+        logger.error(f"Error checking similarity for '{request.title}': {e}")
+        return models.TopicSimilarityResponse(similar_topics=[])
+
+
 # ========================== 
 # SEARCH ENDPOINT
 # ========================== 
@@ -368,146 +515,6 @@ async def search_topics(request: models.TopicSearchRequest):
     )
 
 
-@router.post("/sync", status_code=202)
-async def trigger_sync():
-    """Trigger a background sync of missing topics to Qdrant.
-    Returns 202 Accepted and starts sync in background. Frontend can poll `/sync/status`.
-    """
-    from services.qdrant_service import QdrantService
-    import datetime
-
-    if _sync_status.get('syncing'):
-        return {"detail": "Sync already in progress"}
-
-    q = QdrantService(collection_name="topics")
-
-    async def _run_sync():
-        _sync_status['syncing'] = True
-        _sync_status['last_error'] = None
-        try:
-            await q.sync_missing_topics()
-            info = await q.get_collection_info()
-            pts = getattr(info, 'points_count', 0) or 0
-            _sync_status['last_count'] = int(pts)
-            _sync_status['last_run'] = datetime.datetime.utcnow().isoformat()
-        except Exception as e:
-            _sync_status['last_error'] = str(e)
-        finally:
-            _sync_status['syncing'] = False
-
-    asyncio.create_task(_run_sync())
-    return {"detail": "Sync started"}
-
-
-@router.get("/sync/status")
-async def sync_status():
-    """Return last sync status for frontend polling."""
-    return _sync_status
-
-# ========================== 
-# STATISTICS ENDPOINT
-# ========================== 
-@router.get("/stats/overview", response_model=models.TopicStatsResponse)
-async def get_topic_statistics():
-    """Get topic statistics."""
-    stats_func = topic_service.get_statistics
-    stats = await asyncio.to_thread(stats_func)
-    
-    return models.TopicStatsResponse(
-        total_topics=stats.get('total_topics', 0),
-        total_views=stats.get('total_views', 0),
-        total_searches=stats.get('total_searches', 0),
-        by_department=stats.get('by_department', {}),
-        by_option=stats.get('by_option', {}),
-        by_category=stats.get('by_option', {}),  # Map to legacy name
-        by_year=stats.get('by_year', {}),
-        by_status=stats.get('by_status', {}),
-        by_difficulty=stats.get('by_status', {})  # Map to legacy name
-    )
-
-# ========================== 
-# AI-POWERED ENDPOINTS (FIXED)
-# ========================== 
-@router.post("/ai/suggest", response_model=models.TopicSuggestionResponse)
-async def suggest_topics(request: models.TopicSuggestionRequest):
-    """
-    Generate AI-powered topic suggestions.
-    NOW USES 'option' field correctly, prioritizing subgroup!
-    """
-    # Determine option to use, prioritizing subgroup
-    option_to_use = request.subgroup if request.subgroup else request.option
-    
-    suggestions = await topic_ai.suggest_topics(
-        option=option_to_use,  # Prioritize subgroup if provided
-        department=request.department,
-        count=request.count,
-        keywords=request.keywords,
-        user_request=request.user_request
-    )
-    
-    # ✅ FIX: Ensure each suggestion has BOTH modern and legacy keys
-    # Maps internal keys (difficulty, tags) -> modern API keys (status, keywords)
-    for s in suggestions:
-        if 'difficulty' in s and 'status' not in s:
-            s['status'] = s['difficulty']
-        if 'tags' in s and 'keywords' not in s:
-            s['keywords'] = s['tags']
-        # Also ensure legacy keys exist if service returned modern ones (just in case)
-        if 'status' in s and 'difficulty' not in s:
-            s['difficulty'] = s['status']
-        if 'keywords' in s and 'tags' not in s:
-            s['tags'] = s['keywords']
-            
-    return models.TopicSuggestionResponse(suggestions=suggestions)
-
-@router.post("/ai/improve", response_model=models.TopicImproveResponse)
-async def improve_topic(request: models.TopicImproveRequest):
-    """
-    Improve an existing topic using AI.
-    NOW USES 'option' field correctly, prioritizing subgroup!
-    """
-    # Determine option to use, prioritizing subgroup
-    option_to_use = request.subgroup if request.subgroup else request.option
-    
-    result = await topic_ai.improve_topic(
-        title=request.title,
-        description=request.description,
-        option=option_to_use,  # Prioritize subgroup if provided
-        user_instruction=request.user_instruction
-    )
-    
-    # ✅ FIX: Map response keys to match TopicImproveResponse model
-    # Provides BOTH modern and legacy names for "no-stress" compatibility
-    tags = result.get('suggested_tags', [])
-    difficulty = result.get('suggested_difficulty', 'reserved')
-    
-    return models.TopicImproveResponse(
-        improved_title=result.get('improved_title', request.title),
-        improved_description=result.get('improved_description', request.description),
-        suggested_keywords=tags, 
-        suggested_tags=tags,
-        suggested_status=difficulty,
-        suggested_difficulty=difficulty
-    )
-
-@router.post("/ai/similarity", response_model=models.TopicSimilarityResponse)
-async def check_similarity(request: models.TopicSimilarityRequest):
-    """
-    Check semantic similarity of a topic.
-    NOW USES 'option' field correctly and is CASE-INSENSITIVE, prioritizing subgroup!
-    """
-    # Determine option to use, prioritizing subgroup
-    option_to_use = request.subgroup if request.subgroup else request.option
-    
-    similar = await topic_ai.check_similarity(
-        title=request.title,
-        option=option_to_use,  # Prioritize subgroup if provided
-        threshold=request.threshold
-    )
-    
-    return models.TopicSimilarityResponse(similar_topics=similar)
-
-
 # =============== CHATBOT ENDPOINT ===============
 
 @router.post("/chat", response_model=models.TopicChatResponse)
@@ -527,6 +534,25 @@ async def topics_chat(
             option=request.subgroup # maps subgroup to option
         )
         
+        # --- NEW: Master Intent Classification ---
+        master_intent_response = await gemini_service.extract_master_intent(request.message)
+        master_intent_type = master_intent_response.get("intent_type", "general_chat")
+        logger.info(f"Master Intent Type for '{request.message}': {master_intent_type}")
+
+        if master_intent_type == "navigation_query":
+            # Return a friendly academic response for navigation queries
+            ai_response = (
+                "It sounds like you're asking about campus navigation! "
+                "I specialize in **academic project guidance** here at the University of Bamenda. "
+                "For directions or campus facility information, please head over to our **Navigation Assistant**. "
+                "How can I help you with your final year project today?"
+            )
+            metadata = {"action_taken": "redirect_to_navigation"}
+            await mongodb_service.save_chat_message(request.session_id, "topics", "assistant", ai_response, metadata=metadata)
+            await mongodb_service.disconnect()
+            return models.TopicChatResponse(message=ai_response, session_id=request.session_id, metadata=metadata)
+        
+        # If not a navigation query, proceed with topic-specific logic
         # 1. Extract Intent
         intent = await gemini_service.extract_topic_intent(request.message)
         action = intent.get("action", "chat")
@@ -619,6 +645,6 @@ async def topics_chat(
             logger.warning(f"Error during MongoDB disconnect in error handling: {disconnect_e}")
         return models.TopicChatResponse(
             status="error",
-            message="I\'m here to help with your project, but hit a small snag. What research areas are you interested in?",
+            message="I'm sorry, I'm currently experiencing technical difficulties. Please try again in a moment.",
             session_id=request.session_id1
         )
