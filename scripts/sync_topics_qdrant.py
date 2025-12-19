@@ -22,23 +22,12 @@ async def sync_topics():
     topic_service = TopicService()
     
     # Initialize Qdrant for 'topics'
-    qdrant = QdrantService(collection_name="topics", load_model=True)
+    qdrant = QdrantService(collection_name="topics")
     
-    # 1. Check if collection exists
-    try:
-        info = await qdrant.get_collection_info()
-        if "error" in info:
-            print(f"⚠ Collection 'topics' error: {info['error']}")
-            print("   Creating collection...")
-            await qdrant.create_collection()
-            print("   ✓ Collection created")
-        else:
-            print(f"✓ Collection 'topics' exists")
-            print(f"   - Points count: {info.points_count}")
-            
-    except Exception as e:
-        print(f"✗ Error checking Qdrant: {e}")
-        return
+    # 1. Force recreate collection to ensure correct vector size
+    print("   Forcing recreation of collection with correct vector size...")
+    await qdrant.create_collection(force_recreate=True)
+    print("   ✓ Collection recreated")
 
     # 2. Fetch all topics from MongoDB
     print("\nFetching topics from MongoDB...")
@@ -53,7 +42,9 @@ async def sync_topics():
     points = []
     print("\nPreparing data for Qdrant...")
     
-    for topic in topics:
+    for i, topic in enumerate(topics):
+        if i % 100 == 0:
+            print(f"   Processed {i}/{len(topics)} topics")
         # Create text for embedding
         # Combine title, description, and tags for better semantic search
         text = f"{topic.get('title', '')}. {topic.get('description', '')}. Tags: {', '.join(topic.get('tags', []))}"

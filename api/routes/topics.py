@@ -1,5 +1,4 @@
-"""
-Topics Routes Module (COMPLETE FIX)
+"""Topics Routes Module (COMPLETE FIX)
 
 MAJOR CHANGES:
 1. All asyncio.to_thread() calls properly wrapped for sync TopicService methods
@@ -42,9 +41,37 @@ def get_gemini_service():
 def get_mongodb_service():
     return MongoDBService()
 
-# ==========================
+# Simple in-memory sync status (keeps last run info). Persist externally if needed in production.
+_sync_status = {
+    'syncing': False,
+    'last_run': None,
+    'last_count': 0,
+    'last_error': None
+}
+
+# ========================== 
+# DIAGNOSTIC ENDPOINT (TEMPORARY)
+# ========================== 
+@router.get("/qdrant-health", tags=["Diagnostics"])
+async def qdrant_health_check():
+    """
+    Temporary endpoint to diagnose Qdrant connection and collection status.
+    """
+    try:
+        from services.qdrant_service import QdrantService
+        logger.info("Initializing QdrantService for health check...")
+        qdrant_service = QdrantService(collection_name="topics")
+        logger.info("QdrantService initialized. Getting collection info...")
+        info = await qdrant_service.get_collection_info()
+        logger.info(f"Received info from Qdrant: {info}")
+        return info
+    except Exception as e:
+        logger.error(f"Error in Qdrant health check endpoint: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to check Qdrant health: {str(e)}")
+
+# ========================== 
 # HELPER FUNCTIONS
-# ==========================
+# ========================== 
 async def sync_topic_to_qdrant(topic: Dict):
     """Helper to sync a single topic to Qdrant."""
     try:
@@ -82,9 +109,9 @@ async def sync_topic_to_qdrant(topic: Dict):
     except Exception as e:
         logger.error(f"Failed to sync topic to Qdrant: {e}")
 
-# ==========================
+# ========================== 
 # CRUD ENDPOINTS
-# ==========================
+# ========================== 
 @router.post("/", response_model=models.TopicResponse)
 async def create_topic(request: models.TopicCreateRequest):
     """
@@ -180,106 +207,183 @@ async def delete_topic(topic_id: str):
     await asyncio.to_thread(delete_func, topic_id)
     # Return 204 No Content
 
-# ==========================
+# ========================== 
 # SEARCH ENDPOINT
-# ==========================
+# ========================== 
 @router.post("/search", response_model=models.TopicSearchResponse)
 async def search_topics(request: models.TopicSearchRequest):
     """
-    Search topics with filters.
-    If placeholder filters are detected, it prioritizes a broad vector search.
+    Search topics with semantic vector search and strict filtering.
+    Always syncs missing topics before searching.
+    Falls back to text search if vector search returns no results.
     """
-    # --- Start of Bug Fix ---
-    # Detect if all filters are the exact placeholders sent by the frontend
-    is_placeholder_filter = (
-        request.department == 'string' and
-        request.option == 'string' and
-        request.status == 'string' and
-        request.year == 0
-    )
-
-    mongo_results = []
-    # 1. Search MongoDB with specific filters only if they are NOT placeholders
-    if not is_placeholder_filter:
-        search_func = topic_service.search_topics
-        mongo_results = await asyncio.to_thread(
-            search_func,
-            query=request.query,
-            department=request.department,
-            option=request.option,
-            year=request.year,
-            status=request.status,
-            limit=request.limit
-        )
-        logger.info(f"MongoDB text search with specific filters found {len(mongo_results)} results")
-    else:
-        logger.info("Placeholder filters detected. Skipping restrictive text search and prioritizing vector search.")
-    # --- End of Bug Fix ---
+    # Always sync missing topics before searching
+    try:
+        from services.qdrant_service import QdrantService
+        qdrant_service = QdrantService(collection_name="topics")
+        logger.info("Syncing missing topics to Qdrant...")
+        await qdrant_service.sync_missing_topics()
+        logger.info("Topic sync completed")
+    except Exception as e:
+        logger.warning(f"Failed to sync topics: {e}")
+        # Continue with search even if sync fails
     
-    # 2. Search Vector DB (if query provided) - This will now be the primary source for placeholder searches
+    # Perform vector search first
     qdrant_results = []
     if request.query:
-        try:
-            # Initialize Qdrant for topics
-            from services.qdrant_service import QdrantService
-            qdrant_service = QdrantService(collection_name="topics")
-            
-            # Search
-            qdrant_hits = await qdrant_service.search(
+        # Get more results for filtering
+        search_limit = request.limit * 3
+        
+        # Try semantic vector search
+        qdrant_hits = await qdrant_service.search(
+            query=request.query,
+            limit=search_limit
+        )
+        logger.info(f"Vector search for '{request.query}' returned {len(qdrant_hits)} hits")
+        
+        # If no vector results, fall back to text search
+        if not qdrant_hits:
+            logger.info("No vector results, falling back to text search")
+            qdrant_hits = await qdrant_service.search_by_text(
                 query=request.query,
-                limit=request.limit
+                limit=search_limit
             )
-            
-            # Extract IDs from Qdrant hits
-            qdrant_ids = []
+            logger.info(f"Text search returned {len(qdrant_hits)} hits")
+
+        # If still no hits from Qdrant, fall back to MongoDB text search
+        if not qdrant_hits:
+            logger.info("No Qdrant hits; falling back to MongoDB text search")
+            # TopicService.search_topics is synchronous; run in thread
+            db_search = topic_service.search_topics
+            db_topics = await asyncio.to_thread(db_search, request.query, None, None, None, None, search_limit)
+            logger.info(f"MongoDB text search returned {len(db_topics)} topics")
+            # Use MongoDB topics directly as full results
+            qdrant_results = db_topics
+            # Skip the subsequent ID-extraction -> fetch-from-mongo path
+            # and proceed to filtering/scoring below
+        
+        # Extract topic IDs and map semantic scores from Qdrant hits (if any)
+        score_map = {}
+        qdrant_ids = []
+        if qdrant_hits:
             for hit in qdrant_hits:
-                # Qdrant payload might have 'id' or '_id' or 'topic_id'
                 q_id = hit.get('topic_id') or hit.get('id') or hit.get('_id')
                 if q_id:
                     qdrant_ids.append(str(q_id))
-            
-            # Fetch full topics from MongoDB for these IDs
-            if qdrant_ids:
-                # ✅ FIX: Wrap blocking list_topics call
-                list_func = topic_service.list_topics
-                qdrant_results = await asyncio.to_thread(
-                    list_func,
-                    filter_query={'topic_id': {'$in': qdrant_ids}},
-                    limit=len(qdrant_ids)
-                )
-            
-        except Exception as e:
-            logger.warning(f"Vector search failed: {e}")
-            # Continue with just MongoDB results
+                    try:
+                        score_map[str(q_id)] = float(hit.get('score', 0.0))
+                    except Exception:
+                        score_map[str(q_id)] = 0.0
+        logger.info(f"Extracted {len(qdrant_ids)} topic IDs from search results")
+
+        # Fetch full topic documents from MongoDB when we have IDs
+        if qdrant_ids:
+            list_func = topic_service.list_topics
+            qdrant_results = await asyncio.to_thread(
+                list_func,
+                filter_query={'topic_id': {'$in': qdrant_ids}},
+                limit=len(qdrant_ids)
+            )
+            logger.info(f"Fetched {len(qdrant_results)} full topics from MongoDB")
+
+        # At this point qdrant_results may either be from MongoDB fallback or fetched by IDs
+        # We'll apply soft scoring (do NOT exclude results) that combines semantic score + filter boosts
+
+        def _field_matches(topic_val, req_val):
+            """Return True if topic_val matches req_val case-insensitively.
+            Handles strings and lists from payloads safely.
+            """
+            if req_val in ['string', '', None]:
+                return False
+            if topic_val is None:
+                return False
+            if isinstance(topic_val, list):
+                return any(str(v).lower() == str(req_val).lower() for v in topic_val if v is not None)
+            return str(topic_val).lower() == str(req_val).lower()
+
+        scored_results = []
+        for topic in qdrant_results:
+            base_score = score_map.get(str(topic.get('topic_id')), 0.0)
+            filter_score = 0
+
+            # Department match (+3)
+            if request.department not in ['string', ''] and _field_matches(topic.get('department'), request.department):
+                filter_score += 3
+            # Year match (+2)
+            if request.year > 0 and topic.get('year') == request.year:
+                filter_score += 2
+            # Option match (+1)
+            if request.option not in ['string', ''] and _field_matches(topic.get('option'), request.option):
+                filter_score += 1
+            # Status match (+1)
+            if request.status not in ['string', ''] and _field_matches(topic.get('status'), request.status):
+                filter_score += 1
+
+            total_score = float(base_score) + float(filter_score)
+            topic['_semantic_score'] = float(base_score)
+            topic['_filter_score'] = filter_score
+            topic['_relevance_score'] = total_score
+            scored_results.append(topic)
+
+        # Sort by combined relevance score (highest first)
+        scored_results.sort(key=lambda x: x.get('_relevance_score', 0), reverse=True)
+
+        # Return top N results (if there are any)
+        qdrant_results = scored_results[:request.limit]
+        logger.info(f"Returning top {len(qdrant_results)} scored results")
     
-    # 3. Merge Results (Deduplicate by topic_id)
-    merged_map = {}
-    
-    # Add MongoDB results first (will be empty in placeholder case)
-    for t in mongo_results:
-        t_id = str(t.get('topic_id') or t.get('_id'))
-        merged_map[t_id] = t
-        
-    # Add Qdrant results (if not already present)
-    for t in qdrant_results:
-        t_id = str(t.get('topic_id') or t.get('_id'))
-        if t_id not in merged_map:
-            merged_map[t_id] = t
+    # Use filtered and scored results
+    final_results = qdrant_results
             
-    merged_results = list(merged_map.values())
-            
-    logger.info(f"Final merged results count: {len(merged_results)}")
+    logger.info(f"Final results count: {len(final_results)}")
     
     return models.TopicSearchResponse(
         query=request.query,
-        total_results=len(merged_results),
-        topics=[models.TopicResponse(**t) for t in merged_results],
+        total_results=len(final_results),
+        topics=[models.TopicResponse(**t) for t in final_results],
         filters_applied=request.dict(exclude_none=True)
     )
 
-# ==========================
+
+@router.post("/sync", status_code=202)
+async def trigger_sync():
+    """Trigger a background sync of missing topics to Qdrant.
+    Returns 202 Accepted and starts sync in background. Frontend can poll `/sync/status`.
+    """
+    from services.qdrant_service import QdrantService
+    import datetime
+
+    if _sync_status.get('syncing'):
+        return {"detail": "Sync already in progress"}
+
+    q = QdrantService(collection_name="topics")
+
+    async def _run_sync():
+        _sync_status['syncing'] = True
+        _sync_status['last_error'] = None
+        try:
+            await q.sync_missing_topics()
+            info = await q.get_collection_info()
+            pts = getattr(info, 'points_count', 0) or 0
+            _sync_status['last_count'] = int(pts)
+            _sync_status['last_run'] = datetime.datetime.utcnow().isoformat()
+        except Exception as e:
+            _sync_status['last_error'] = str(e)
+        finally:
+            _sync_status['syncing'] = False
+
+    asyncio.create_task(_run_sync())
+    return {"detail": "Sync started"}
+
+
+@router.get("/sync/status")
+async def sync_status():
+    """Return last sync status for frontend polling."""
+    return _sync_status
+
+# ========================== 
 # STATISTICS ENDPOINT
-# ==========================
+# ========================== 
 @router.get("/stats/overview", response_model=models.TopicStatsResponse)
 async def get_topic_statistics():
     """Get topic statistics."""
@@ -298,9 +402,9 @@ async def get_topic_statistics():
         by_difficulty=stats.get('by_status', {})  # Map to legacy name
     )
 
-# ==========================
+# ========================== 
 # AI-POWERED ENDPOINTS (FIXED)
-# ==========================
+# ========================== 
 @router.post("/ai/suggest", response_model=models.TopicSuggestionResponse)
 async def suggest_topics(request: models.TopicSuggestionRequest):
     """
@@ -401,7 +505,7 @@ async def topics_chat(
             results = await asyncio.to_thread(func, query=q, limit=3)
             if results:
                 found = [t.get("title") for t in results]
-                grounding_data = f"\n[DATABASE INFO: Found these existing topics in our library: {', '.join(found)}]"
+                grounding_data = f"\n[DATABASE INFO: Found these existing topics in our library: {', '.join(found)} ]"
                 metadata["results_count"] = len(results)
 
         elif action == "suggest":
@@ -411,7 +515,7 @@ async def topics_chat(
             suggestions = await topic_ai.suggest_topics(department=dept, option=opt, count=3)
             if suggestions:
                 titles = [s.get("title") for s in suggestions]
-                grounding_data = f"\n[AI SUGGESTIONS: I generated these potential ideas: {', '.join(titles)}]"
+                grounding_data = f"\n[AI SUGGESTIONS: I generated these potential ideas: {', '.join(titles)} ]"
                 metadata["suggestions_count"] = len(suggestions)
 
         elif action == "improve" and intent.get("title"):
@@ -420,7 +524,7 @@ async def topics_chat(
                 description="", # Optional
                 option=request.option or "Software Engineering"
             )
-            grounding_data = f"\n[AI IMPROVEMENT: Suggested Title: {improvement.get('improved_title')}. Why: {improvement.get('improved_description')}]"
+            grounding_data = f"\n[AI IMPROVEMENT: Suggested Title: {improvement.get('improved_title')}. Why: {improvement.get('improved_description')}]\n"
             metadata["improved"] = True
 
         # 3. Save user message
@@ -468,10 +572,12 @@ async def topics_chat(
         
     except Exception as e:
         logger.error(f"Topics Agent error: {e}")
-        try: await mongodb_service.disconnect()
-        except: pass
+        try:
+            await mongodb_service.disconnect()
+        except Exception as disconnect_e:
+            logger.warning(f"Error during MongoDB disconnect in error handling: {disconnect_e}")
         return models.TopicChatResponse(
             status="error",
-            message="I'm here to help with your project, but hit a small snag. What research areas are you interested in?",
-            session_id=request.session_id
+            message="I\'m here to help with your project, but hit a small snag. What research areas are you interested in?",
+            session_id=request.session_id1
         )

@@ -13,6 +13,7 @@ import os
 import json
 import logging
 from typing import Optional, Dict, List, Any
+from functools import lru_cache
 from dotenv import load_dotenv
 
 try:
@@ -85,8 +86,14 @@ class GeminiService:
     async def embed_text(self, text: str, task_type: str = "retrieval_query") -> List[float]:
         """
         Generate embedding for a single string using Gemini.
+        Uses caching to speed up repeated queries.
         Default model: text-embedding-004 (768 dimensions)
         """
+        # Use a simple in-memory cache
+        cache_key = f"{text}:{task_type}"
+        if hasattr(self, '_embed_cache') and cache_key in self._embed_cache:
+            return self._embed_cache[cache_key]
+        
         try:
             model = "text-embedding-004"
             response = await self.client.aio.models.embed_content(
@@ -97,7 +104,14 @@ class GeminiService:
                     "output_dimensionality": 768
                 }
             )
-            return response.embeddings[0].values
+            embedding = response.embeddings[0].values
+            
+            # Cache the result
+            if not hasattr(self, '_embed_cache'):
+                self._embed_cache = {}
+            self._embed_cache[cache_key] = embedding
+            
+            return embedding
         except Exception as e:
             logger.error(f"Gemini embedding failed: {e}")
             raise

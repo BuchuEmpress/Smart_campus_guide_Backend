@@ -1,7 +1,7 @@
 """
-Qdrant Service - Fully Fixed Asynchronous Version
+Qdrant Service - Fully Asynchronous Version
 Now works with:
-- search_points()  <-- correct async search
+- search()  <-- correct async search
 - scroll() for ID-exact lookup
 - robust logging, errors, lazy model loading
 """
@@ -11,7 +11,7 @@ from typing import List, Dict, Optional
 from dotenv import load_dotenv
 
 import asyncio
-from qdrant_client import QdrantClient
+from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import (
     Distance,
     VectorParams,
@@ -41,8 +41,8 @@ class QdrantService:
                 "Missing QDRANT_HOST or QDRANT_API_KEY in environment variables."
             )
 
-        # Sync client (wrapped in async methods)
-        self.client = QdrantClient(
+        # Async client
+        self.client = AsyncQdrantClient(
             url=self.qdrant_url,
             api_key=self.qdrant_key
         )
@@ -64,15 +64,14 @@ class QdrantService:
     ) -> List[Dict]:
         """
         Perform semantic vector search using correct async API:
-        self.client.search_points()
+        self.client.query_points()
         """
         try:
             # Use Gemini for embeddings (remote call)
             vector = await self.gemini.embed_text(query)
 
-            # Run sync query in thread pool
-            results = await asyncio.to_thread(
-                self.client.query_points,
+            # Run async search
+            results = await self.client.query_points(
                 collection_name=self.collection_name,
                 query=vector,
                 limit=limit,
@@ -80,8 +79,8 @@ class QdrantService:
                 with_payload=True
             )
             
-            # Extract points from response
-            results = results.points if hasattr(results, 'points') else results
+            # query_points returns a response with .points
+            results = results.points
 
             formatted = []
             for hit in results:
@@ -114,8 +113,7 @@ class QdrantService:
             )
             
             # Use scroll with filter
-            results, _ = await asyncio.to_thread(
-                self.client.scroll,
+            results, _ = await self.client.scroll(
                 collection_name=self.collection_name,
                 scroll_filter=scroll_filter,
                 limit=1,
@@ -131,8 +129,7 @@ class QdrantService:
             # Self-healing: Create index if missing
             if "Index required" in str(e):
                 print("Index missing for 'id'. Creating index now...")
-                await asyncio.to_thread(
-                    self.client.create_payload_index,
+                await self.client.create_payload_index(
                     collection_name=self.collection_name,
                     field_name="id",
                     field_schema="keyword"
@@ -148,14 +145,13 @@ class QdrantService:
     # -----------------------------------------------------
     async def create_collection(self, force_recreate: bool = True):
         """Creates collection if missing."""
-        exists = await asyncio.to_thread(self.client.collection_exists, self.collection_name)
+        exists = await self.client.collection_exists(self.collection_name)
 
         if exists and force_recreate:
-            await asyncio.to_thread(self.client.delete_collection, self.collection_name)
+            await self.client.delete_collection(self.collection_name)
 
         if not exists or force_recreate:
-            await asyncio.to_thread(
-                self.client.create_collection,
+            await self.client.create_collection(
                 collection_name=self.collection_name,
                 vectors_config=VectorParams(
                     size=self.vector_size,
@@ -170,30 +166,54 @@ class QdrantService:
     # UPSERT POINTS
     # -----------------------------------------------------
     async def upload_points(self, items: List[Dict]):
-        """Upload vectorized locations to Qdrant."""
-        try:
-            points = []
-            # Batch encode for efficiency
-            texts = [f"{item['name']} {item.get('description', '')}" for item in items]
-            vectors = await self.gemini.embed_batch(texts)
+        """Upload vectorized locations to Qdrant.
 
-            for idx, (item, vector) in enumerate(zip(items, vectors)):
-                points.append(
-                    PointStruct(
-                        id=item.get("id", idx),
-                        vector=vector,
-                        payload=item
+        This method respects the Gemini batch limit (<=100 requests per batch)
+        and uploads points to Qdrant in chunks. It raises on failure so callers
+        can detect and react to upload problems.
+        """
+        try:
+            batch_size = 100
+            total = len(items)
+            if total == 0:
+                return
+
+            for start in range(0, total, batch_size):
+                batch = items[start:start + batch_size]
+
+                # Prepare texts for embedding
+                texts = [f"{it.get('name','')} {it.get('description','')}" for it in batch]
+
+                # Request embeddings for this batch
+                vectors = await self.gemini.embed_batch(texts)
+                if not vectors or len(vectors) != len(batch):
+                    raise RuntimeError(f"Embedding batch failed or returned unexpected size: expected {len(batch)}, got {len(vectors) if vectors is not None else 0}")
+
+                points = []
+                for idx, (item, vector) in enumerate(zip(batch, vectors)):
+                    points.append(
+                        PointStruct(
+                            id=item.get("id", f"{start + idx}"),
+                            vector=vector,
+                            payload=item
+                        )
                     )
+
+                # Upsert this batch
+                await self.client.upsert(
+                    collection_name=self.collection_name,
+                    points=points
                 )
 
-            await asyncio.to_thread(
-                self.client.upsert,
-                collection_name=self.collection_name,
-                points=points
-            )
+                # small throttle to avoid API rate limits
+                await asyncio.sleep(0.05)
 
         except Exception as e:
-            print(f"Error uploading points: {e}")
+            # Log and re-raise so callers (sync) notice failures
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Error uploading points: {e}")
+            raise
 
     # -----------------------------------------------------
     # TEXT SEARCH (PAYLOAD LOOKUP)
@@ -221,8 +241,7 @@ class QdrantService:
 
             # Execution with auto-retry for indexing
             try:
-                results, _ = await asyncio.to_thread(
-                    self.client.scroll,
+                results, _ = await self.client.scroll(
                     collection_name=self.collection_name,
                     scroll_filter=text_filter,
                     limit=limit,
@@ -238,8 +257,7 @@ class QdrantService:
                     await self._create_text_indexes()
                     
                     # Retry once
-                    results, _ = await asyncio.to_thread(
-                        self.client.scroll,
+                    results, _ = await self.client.scroll(
                         collection_name=self.collection_name,
                         scroll_filter=text_filter,
                         limit=limit,
@@ -268,14 +286,12 @@ class QdrantService:
             if "Index required" in str(e):
                 print("Text index missing. Creating indexes for 'name' and 'description'...")
                 try:
-                    await asyncio.to_thread(
-                        self.client.create_payload_index,
+                    await self.client.create_payload_index(
                         collection_name=self.collection_name,
                         field_name="name",
                         field_schema="text"
                     )
-                    await asyncio.to_thread(
-                        self.client.create_payload_index,
+                    await self.client.create_payload_index(
                         collection_name=self.collection_name,
                         field_name="description",
                         field_schema="text"
@@ -291,20 +307,17 @@ class QdrantService:
     async def _create_text_indexes(self):
         """Creates text indexes for name and description."""
         try:
-            await asyncio.to_thread(
-                self.client.create_payload_index,
+            await self.client.create_payload_index(
                 collection_name=self.collection_name,
                 field_name="name",
                 field_schema="text"
             )
-            await asyncio.to_thread(
-                self.client.create_payload_index,
+            await self.client.create_payload_index(
                 collection_name=self.collection_name,
                 field_name="description",
                 field_schema="text"
             )
-            await asyncio.to_thread(
-                self.client.create_payload_index,
+            await self.client.create_payload_index(
                 collection_name=self.collection_name,
                 field_name="id",
                 field_schema="text"
@@ -318,9 +331,103 @@ class QdrantService:
     async def get_collection_info(self):
         """Returns Qdrant info or readable error."""
         try:
-            return await asyncio.to_thread(self.client.get_collection, self.collection_name)
+            return await self.client.get_collection(self.collection_name)
         except Exception as e:
             return {"error": str(e)}
+
+    async def sync_missing_topics(self):
+        """
+        Sync missing topics from MongoDB to Qdrant.
+        Ensures all MongoDB topics exist in Qdrant with correct embeddings.
+        """
+        try:
+            from services.topic_service import TopicService
+            import uuid
+            
+            # Initialize TopicService
+            topic_service = TopicService()
+            
+            # Get all topics from MongoDB
+            all_topics = topic_service.list_topics(limit=10000)  # Large limit to get all
+            print(f"Found {len(all_topics)} topics in MongoDB")
+            
+            if not all_topics:
+                print("No topics to sync")
+                return
+            
+            # Get existing topic IDs from Qdrant
+            existing_ids = set()
+            try:
+                # Scroll through all points to get existing topic_ids
+                offset = None
+                while True:
+                    results, next_offset = await self.client.scroll(
+                        collection_name=self.collection_name,
+                        offset=offset,
+                        limit=1000,
+                        with_payload=["topic_id"]
+                    )
+                    
+                    for point in results:
+                        if point.payload.get("topic_id"):
+                            existing_ids.add(str(point.payload["topic_id"]))
+                    
+                    if next_offset is None:
+                        break
+                    offset = next_offset
+                    
+            except Exception as e:
+                print(f"Error getting existing Qdrant topics: {e}")
+                # If collection doesn't exist, recreate it
+                await self.create_collection(force_recreate=True)
+                existing_ids = set()
+            
+            print(f"Found {len(existing_ids)} topics already in Qdrant")
+            
+            # Find missing topics
+            missing_topics = []
+            for topic in all_topics:
+                topic_id = str(topic.get('topic_id', ''))
+                if topic_id and topic_id not in existing_ids:
+                    missing_topics.append(topic)
+            
+            print(f"Found {len(missing_topics)} missing topics to sync")
+            
+            if not missing_topics:
+                print("All topics are already synced")
+                return
+            
+            # Prepare points for upload
+            points = []
+            for topic in missing_topics:
+                # Create text for embedding
+                text = f"{topic.get('title', '')}. {topic.get('description', '')}. Tags: {', '.join(topic.get('tags', []))}"
+                
+                # Use topic_id as payload id
+                t_id = topic.get('topic_id')
+                
+                # Generate deterministic UUID from topic_id
+                point_id = str(uuid.uuid5(uuid.NAMESPACE_DNS, str(t_id)))
+                
+                points.append({
+                    "id": point_id,
+                    "name": text,  # Used for embedding generation
+                    "topic_id": t_id,
+                    "title": topic.get('title'),
+                    "department": topic.get('department'),
+                    "option": topic.get('option'),
+                    "year": topic.get('year'),
+                    "status": topic.get('status')
+                })
+            
+            # Upload missing topics
+            print(f"Uploading {len(points)} missing topics to Qdrant...")
+            await self.upload_points(points)
+            print("✓ Sync completed!")
+            
+        except Exception as e:
+            print(f"Error syncing missing topics: {e}")
+            raise
 
     # -----------------------------------------------------
     # OPTIONAL: PRINT RESULTS
