@@ -382,8 +382,10 @@ async def search_topics(request: models.TopicSearchRequest):
     qdrant_filter_conditions = [
         FieldCondition(key="department", match=MatchValue(value=request.department))
     ]
-    if request.subgroup:
-        qdrant_filter_conditions.append(FieldCondition(key="option", match=MatchValue(value=request.subgroup)))
+    # Prioritize subgroup if provided, else use option
+    option_to_filter = request.subgroup if request.subgroup else request.option
+    if option_to_filter:
+        qdrant_filter_conditions.append(FieldCondition(key="option", match=MatchValue(value=option_to_filter)))
     
     qdrant_filter = Filter(must=qdrant_filter_conditions)
 
@@ -419,7 +421,7 @@ async def search_topics(request: models.TopicSearchRequest):
                 db_search,
                 query=request.query,
                 department=request.department,
-                option=request.subgroup, # maps subgroup to option
+                option=request.subgroup or request.option, # maps subgroup/option to option
                 year=request.year,
                 status=request.status,
                 limit=search_limit
@@ -451,8 +453,8 @@ async def search_topics(request: models.TopicSearchRequest):
             mongo_filter = {'topic_id': {'$in': qdrant_ids}}
             if request.department:
                 mongo_filter['department'] = request.department
-            if request.subgroup: # maps subgroup to option
-                mongo_filter['option'] = request.subgroup
+            if request.subgroup or request.option:
+                mongo_filter['option'] = request.subgroup or request.option
             if request.year:
                 mongo_filter['year'] = request.year
             if request.status:
@@ -531,7 +533,7 @@ async def topics_chat(
             request.session_id, 
             "topics",
             department=request.department,
-            option=request.subgroup # maps subgroup to option
+            option=request.subgroup or request.option # maps subgroup/option to option
         )
         
         # --- NEW: Master Intent Classification ---
@@ -646,5 +648,5 @@ async def topics_chat(
         return models.TopicChatResponse(
             status="error",
             message="I'm sorry, I'm currently experiencing technical difficulties. Please try again in a moment.",
-            session_id=request.session_id1
+            session_id=request.session_id
         )
