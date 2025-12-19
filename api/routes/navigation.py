@@ -311,6 +311,11 @@ async def navigation_chat(
         
         ai_response = await gemini_service.generate_response(agent_prompt, context=history)
         
+        # Fallback for empty AI response
+        if not ai_response or ai_response.strip() == "":
+            ai_response = "I couldn't generate a specific response at this moment. Please try rephrasing your question or ask about a campus location!"
+            metadata["fallback_triggered"] = True
+
         # 5. Save and Return
         await mongodb_service.save_chat_message(request.session_id, "location", "assistant", ai_response, metadata=metadata)
         await mongodb_service.disconnect()

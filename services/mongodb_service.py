@@ -554,20 +554,28 @@ class MongoDBService:
             logger.error(f"Error saving chat message: {e}")
             return False
 
-    async def get_chat_history(self, session_id: str, chat_type: str, limit: int = 10) -> List[Dict]:
+    async def get_chat_history(self, session_id: str, chat_type: str, limit: int = 10, department: Optional[str] = None, option: Optional[str] = None) -> List[Dict]:
         """
-        Retrieve recent chat history for a session.
+        Retrieve recent chat history for a session, with optional filtering by department and option.
         
         Args:
             session_id: Unique session ID
             chat_type: 'location' or 'topics'
             limit: How many messages to retrieve (default: 10)
+            department: Optional filter for department in metadata
+            option: Optional filter for option in metadata
         """
         try:
-            cursor = self.chat_collection.find({
+            query = {
                 "session_id": session_id,
                 "chat_type": chat_type
-            }).sort("timestamp", DESCENDING).limit(limit)
+            }
+            if department:
+                query["metadata.department"] = department
+            if option:
+                query["metadata.option"] = option
+
+            cursor = self.chat_collection.find(query).sort("timestamp", DESCENDING).limit(limit)
             
             history = await cursor.to_list(length=limit)
             

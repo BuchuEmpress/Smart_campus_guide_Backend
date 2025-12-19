@@ -23,6 +23,9 @@ from services.gemini_service import GeminiService
 from services.mongodb_service import MongoDBService
 from fastapi import APIRouter, HTTPException, Query, Path, Body, Depends
 
+# NEW QDRANT IMPORTS
+from qdrant_client.models import Filter, FieldCondition, MatchValue
+
 # Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -228,39 +231,57 @@ async def search_topics(request: models.TopicSearchRequest):
         logger.warning(f"Failed to sync topics: {e}")
         # Continue with search even if sync fails
     
+    # Construct Qdrant filter based on request.department and request.subgroup
+    qdrant_filter_conditions = [
+        FieldCondition(key="department", match=MatchValue(value=request.department))
+    ]
+    if request.subgroup:
+        qdrant_filter_conditions.append(FieldCondition(key="option", match=MatchValue(value=request.subgroup)))
+    
+    qdrant_filter = Filter(must=qdrant_filter_conditions)
+
     # Perform vector search first
     qdrant_results = []
     if request.query:
         # Get more results for filtering
         search_limit = request.limit * 3
         
-        # Try semantic vector search
+        # Try semantic vector search, passing the filter
         qdrant_hits = await qdrant_service.search(
             query=request.query,
-            limit=search_limit
+            limit=search_limit,
+            filter_params=qdrant_filter # Pass the filter here
         )
-        logger.info(f"Vector search for '{request.query}' returned {len(qdrant_hits)} hits")
+        logger.info(f"Vector search for '{request.query}' (Dept: {request.department}, Subgroup: {request.subgroup}) returned {len(qdrant_hits)} hits")
         
-        # If no vector results, fall back to text search
+        # If no vector results, fall back to text search, passing the filter
         if not qdrant_hits:
-            logger.info("No vector results, falling back to text search")
+            logger.info("No vector results, falling back to text search with filter")
             qdrant_hits = await qdrant_service.search_by_text(
                 query=request.query,
-                limit=search_limit
+                limit=search_limit,
+                filter_params=qdrant_filter # Pass the filter here
             )
             logger.info(f"Text search returned {len(qdrant_hits)} hits")
 
         # If still no hits from Qdrant, fall back to MongoDB text search
         if not qdrant_hits:
-            logger.info("No Qdrant hits; falling back to MongoDB text search")
-            # TopicService.search_topics is synchronous; run in thread
+            logger.info("No Qdrant hits; falling back to MongoDB text search with filters")
             db_search = topic_service.search_topics
-            db_topics = await asyncio.to_thread(db_search, request.query, None, None, None, None, search_limit)
-            logger.info(f"MongoDB text search returned {len(db_topics)} topics")
-            # Use MongoDB topics directly as full results
+            db_topics = await asyncio.to_thread(
+                db_search,
+                query=request.query,
+                department=request.department,
+                option=request.subgroup, # maps subgroup to option
+                year=request.year,
+                status=request.status,
+                limit=search_limit
+            )
+            logger.info(f"MongoDB text search returned {len(db_topics)} topics with filters")
             qdrant_results = db_topics
             # Skip the subsequent ID-extraction -> fetch-from-mongo path
             # and proceed to filtering/scoring below
+
         
         # Extract topic IDs and map semantic scores from Qdrant hits (if any)
         score_map = {}
@@ -279,44 +300,38 @@ async def search_topics(request: models.TopicSearchRequest):
         # Fetch full topic documents from MongoDB when we have IDs
         if qdrant_ids:
             list_func = topic_service.list_topics
+            # Construct MongoDB filter for list_topics based on existing request filters
+            mongo_filter = {'topic_id': {'$in': qdrant_ids}}
+            if request.department:
+                mongo_filter['department'] = request.department
+            if request.subgroup: # maps subgroup to option
+                mongo_filter['option'] = request.subgroup
+            if request.year:
+                mongo_filter['year'] = request.year
+            if request.status:
+                mongo_filter['status'] = request.status
+            
             qdrant_results = await asyncio.to_thread(
                 list_func,
-                filter_query={'topic_id': {'$in': qdrant_ids}},
+                filter_query=mongo_filter, # Pass the filter here
                 limit=len(qdrant_ids)
             )
-            logger.info(f"Fetched {len(qdrant_results)} full topics from MongoDB")
+            logger.info(f"Fetched {len(qdrant_results)} full topics from MongoDB with filters")
 
         # At this point qdrant_results may either be from MongoDB fallback or fetched by IDs
         # We'll apply soft scoring (do NOT exclude results) that combines semantic score + filter boosts
-
-        def _field_matches(topic_val, req_val):
-            """Return True if topic_val matches req_val case-insensitively.
-            Handles strings and lists from payloads safely.
-            """
-            if req_val in ['string', '', None]:
-                return False
-            if topic_val is None:
-                return False
-            if isinstance(topic_val, list):
-                return any(str(v).lower() == str(req_val).lower() for v in topic_val if v is not None)
-            return str(topic_val).lower() == str(req_val).lower()
+        # NOTE: In-Python filtering for department/option/year/status is REMOVED as Qdrant/MongoDB now handles it.
 
         scored_results = []
         for topic in qdrant_results:
             base_score = score_map.get(str(topic.get('topic_id')), 0.0)
             filter_score = 0
 
-            # Department match (+3)
-            if request.department not in ['string', ''] and _field_matches(topic.get('department'), request.department):
-                filter_score += 3
-            # Year match (+2)
-            if request.year > 0 and topic.get('year') == request.year:
+            # Year match (+2) - still relevant if not filtered by Qdrant (e.g. MongoDB direct search)
+            if request.year and topic.get('year') == request.year:
                 filter_score += 2
-            # Option match (+1)
-            if request.option not in ['string', ''] and _field_matches(topic.get('option'), request.option):
-                filter_score += 1
-            # Status match (+1)
-            if request.status not in ['string', ''] and _field_matches(topic.get('status'), request.status):
+            # Status match (+1) - still relevant if not filtered by Qdrant
+            if request.status and topic.get('status', '').lower() == request.status.lower():
                 filter_score += 1
 
             total_score = float(base_score) + float(filter_score)
@@ -334,6 +349,14 @@ async def search_topics(request: models.TopicSearchRequest):
     
     # Use filtered and scored results
     final_results = qdrant_results
+            
+    # Verification Step: Log a warning if no topics are found after filtering
+    if not final_results:
+        logger.warning(
+            f"No topics found for query='{request.query}', "
+            f"department='{request.department}', subgroup='{request.subgroup}'. "
+            "Fallbacks (Qdrant text, MongoDB text) were attempted."
+        )
             
     logger.info(f"Final results count: {len(final_results)}")
     
@@ -490,7 +513,13 @@ async def topics_chat(
     """Conversational AI Agent for Final Year Project Guidance - Fully Integrated."""
     try:
         await mongodb_service.connect()
-        history = await mongodb_service.get_chat_history(request.session_id, "topics")
+        # Pass department and subgroup (as option) to get chat history
+        history = await mongodb_service.get_chat_history(
+            request.session_id, 
+            "topics",
+            department=request.department,
+            option=request.subgroup # maps subgroup to option
+        )
         
         # 1. Extract Intent
         intent = await gemini_service.extract_topic_intent(request.message)
@@ -530,7 +559,11 @@ async def topics_chat(
         # 3. Save user message
         await mongodb_service.save_chat_message(
             request.session_id, "topics", "user", request.message,
-            metadata={"department": request.department, "option": request.option}
+            metadata={
+                "department": request.department, 
+                "option": request.option, # Keep original option for full logging
+                "subgroup": request.subgroup # Add subgroup for logging
+            }
         )
         
         # 4. Generate Rich AI Response
@@ -543,9 +576,11 @@ async def topics_chat(
             "CNSM": "Computer Networks and System Maintenance"
         }
         
-        # Determine the specialization name. Default gracefully if option is not in the map or not provided.
+        # Determine the specialization name. Use subgroup if provided, otherwise option, then default.
         specialization = "their chosen field"
-        if request.option:
+        if request.subgroup:
+            specialization = option_full_names.get(request.subgroup.upper(), request.subgroup)
+        elif request.option:
             specialization = option_full_names.get(request.option.upper(), request.option)
 
         department_name = request.department or "the Engineering faculty"

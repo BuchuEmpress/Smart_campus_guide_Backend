@@ -221,7 +221,8 @@ class QdrantService:
     async def search_by_text(
         self,
         query: str,
-        limit: int = 5
+        limit: int = 5,
+        filter_params: Optional[Filter] = None
     ) -> List[Dict]:
         """
         Search for text across multiple payload fields (name, description, id, etc.)
@@ -231,7 +232,7 @@ class QdrantService:
             from qdrant_client.models import MatchText, MatchValue
             
             # Create a broad filter to check multiple fields
-            text_filter = Filter(
+            text_search_filter = Filter(
                 should=[
                     FieldCondition(key="name", match=MatchText(text=query)),
                     FieldCondition(key="description", match=MatchText(text=query)),
@@ -239,11 +240,21 @@ class QdrantService:
                 ]
             )
 
+            # Combine text_search_filter with additional filter_params if provided
+            final_filter = text_search_filter
+            if filter_params:
+                final_filter = Filter(
+                    must=[
+                        text_search_filter,
+                        filter_params
+                    ]
+                )
+
             # Execution with auto-retry for indexing
             try:
                 results, _ = await self.client.scroll(
                     collection_name=self.collection_name,
-                    scroll_filter=text_filter,
+                    scroll_filter=final_filter,
                     limit=limit,
                     with_payload=True
                 )
@@ -259,7 +270,7 @@ class QdrantService:
                     # Retry once
                     results, _ = await self.client.scroll(
                         collection_name=self.collection_name,
-                        scroll_filter=text_filter,
+                        scroll_filter=final_filter,
                         limit=limit,
                         with_payload=True
                     )
@@ -279,29 +290,6 @@ class QdrantService:
             import logging
             logger = logging.getLogger(__name__)
             logger.error(f"Aggressive text search failed: {e}")
-            return []
-
-        except Exception as e:
-            # Self-healing: Create text indexes if missing
-            if "Index required" in str(e):
-                print("Text index missing. Creating indexes for 'name' and 'description'...")
-                try:
-                    await self.client.create_payload_index(
-                        collection_name=self.collection_name,
-                        field_name="name",
-                        field_schema="text"
-                    )
-                    await self.client.create_payload_index(
-                        collection_name=self.collection_name,
-                        field_name="description",
-                        field_schema="text"
-                    )
-                    # Retry once
-                    return await self.search_by_text(query, limit)
-                except Exception as idx_err:
-                    print(f"Failed to create indexes: {idx_err}")
-            
-            print(f"Qdrant text search error: {e}")
             return []
 
     async def _create_text_indexes(self):

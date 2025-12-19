@@ -43,10 +43,11 @@ class TopicCreateRequest(BaseModel):
 class TopicSearchRequest(BaseModel):
     """Search topics with filters."""
     query: Optional[str] = Field(None, description="Keyword search")
-    department: Optional[str] = None
+    department: str = Field("Computer Engineering", description="Department filter, defaults to Computer Engineering")
     option: Optional[str] = None
     year: Optional[int] = None
     status: Optional[str] = None
+    subgroup: Optional[str] = None
     limit: int = Field(50, ge=1, le=100)
 
 
@@ -164,8 +165,9 @@ class TopicChatRequest(BaseModel):
     """Request for topic chatbot conversation."""
     message: str = Field(..., min_length=1, max_length=1000)
     session_id: str = Field(..., description="Unique persistent session ID for memory")
-    department: Optional[str] = None
+    department: str = Field("Computer Engineering", description="Department for chat context, defaults to Computer Engineering")
     option: Optional[str] = None
+    subgroup: Optional[str] = None
 
 class TopicChatResponse(BaseModel):
     """Response from topic chatbot."""
