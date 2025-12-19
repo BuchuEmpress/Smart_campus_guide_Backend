@@ -398,7 +398,7 @@ Your Directions:"""
 
         except Exception as e:
             logger.error(f"Generate response error: {e}")
-            return "I'm having trouble right now. Please try asking about a specific campus location."
+            raise e # Re-raise exception so caller can handle specific fallback messages
 
     async def enhance_description(self, location: Optional[Dict], context: Optional[Dict] = None) -> str:
         """Enhance location description."""
