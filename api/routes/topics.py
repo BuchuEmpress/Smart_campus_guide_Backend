@@ -648,5 +648,6 @@ async def topics_chat(
         return models.TopicChatResponse(
             status="error",
             message="I'm slightly confused. Could you rephrase that? I can help you find a project topic, improve your title, or suggest methodology.",
-            session_id=request.session_id
+            session_id=request.session_id,
+            metadata={"debug_error": str(e)}
         )
