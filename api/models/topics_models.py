@@ -66,8 +66,9 @@ class TopicUpdateRequest(BaseModel):
 
 class TopicSuggestionRequest(BaseModel):
     """Request AI to suggest new topics."""
-    department: str
-    option: str
+    department: str = Field("Computer Engineering", description="Department filter, defaults to Computer Engineering")
+    option: Optional[str] = None
+    subgroup: Optional[str] = None
     count: int = 5
     # Allow int or str in keywords and convert to str
     keywords: Optional[List[Union[str, int]]] = []
@@ -82,16 +83,18 @@ class TopicImproveRequest(BaseModel):
     """Request AI to improve a topic."""
     title: str
     description: str
-    department: str
-    option: str
+    department: str = Field("Computer Engineering", description="Department filter, defaults to Computer Engineering")
+    option: Optional[str] = None
+    subgroup: Optional[str] = None
     user_instruction: Optional[str] = None
 
 
 class TopicSimilarityRequest(BaseModel):
     """Check semantic similarity with existing topics."""
     title: str
-    department: str
-    option: str
+    department: str = Field("Computer Engineering", description="Department filter, defaults to Computer Engineering")
+    option: Optional[str] = None
+    subgroup: Optional[str] = None
     threshold: float = 0.8
 
 

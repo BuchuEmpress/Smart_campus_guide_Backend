@@ -432,11 +432,13 @@ async def get_topic_statistics():
 async def suggest_topics(request: models.TopicSuggestionRequest):
     """
     Generate AI-powered topic suggestions.
-    NOW USES 'option' field correctly!
+    NOW USES 'option' field correctly, prioritizing subgroup!
     """
-    # ✅ FIX: Use 'option' parameter name (matches service signature)
+    # Determine option to use, prioritizing subgroup
+    option_to_use = request.subgroup if request.subgroup else request.option
+    
     suggestions = await topic_ai.suggest_topics(
-        option=request.option,  # Changed from category=request.option
+        option=option_to_use,  # Prioritize subgroup if provided
         department=request.department,
         count=request.count,
         keywords=request.keywords,
@@ -462,13 +464,15 @@ async def suggest_topics(request: models.TopicSuggestionRequest):
 async def improve_topic(request: models.TopicImproveRequest):
     """
     Improve an existing topic using AI.
-    NOW USES 'option' field correctly!
+    NOW USES 'option' field correctly, prioritizing subgroup!
     """
-    # ✅ FIX: Use 'option' parameter name
+    # Determine option to use, prioritizing subgroup
+    option_to_use = request.subgroup if request.subgroup else request.option
+    
     result = await topic_ai.improve_topic(
         title=request.title,
         description=request.description,
-        option=request.option,  # Changed from category=request.option
+        option=option_to_use,  # Prioritize subgroup if provided
         user_instruction=request.user_instruction
     )
     
@@ -490,12 +494,14 @@ async def improve_topic(request: models.TopicImproveRequest):
 async def check_similarity(request: models.TopicSimilarityRequest):
     """
     Check semantic similarity of a topic.
-    NOW USES 'option' field correctly and is CASE-INSENSITIVE!
+    NOW USES 'option' field correctly and is CASE-INSENSITIVE, prioritizing subgroup!
     """
-    # Directly await the now-async method
+    # Determine option to use, prioritizing subgroup
+    option_to_use = request.subgroup if request.subgroup else request.option
+    
     similar = await topic_ai.check_similarity(
         title=request.title,
-        option=request.option,
+        option=option_to_use,  # Prioritize subgroup if provided
         threshold=request.threshold
     )
     
