@@ -546,7 +546,7 @@ async def topics_chat(
             ai_response = (
                 "It sounds like you're asking about campus navigation! "
                 "I specialize in **academic project guidance** here at the University of Bamenda. "
-                "For directions or campus facility information, please head over to our **Navigation Assistant**. "
+                "For directions to classrooms, labs, or offices, please switch to our **Navigation Assistant**. "
                 "How can I help you with your final year project today?"
             )
             metadata = {"action_taken": "redirect_to_navigation"}
@@ -647,6 +647,6 @@ async def topics_chat(
             logger.warning(f"Error during MongoDB disconnect in error handling: {disconnect_e}")
         return models.TopicChatResponse(
             status="error",
-            message="I'm sorry, I'm currently experiencing technical difficulties. Please try again in a moment.",
+            message="I'm slightly confused. Could you rephrase that? I can help you find a project topic, improve your title, or suggest methodology.",
             session_id=request.session_id
         )
