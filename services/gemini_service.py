@@ -37,7 +37,7 @@ class GeminiService:
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY must be set in environment or passed to GeminiService.")
 
-        self.model_name = model_name or os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash")
+        self.model_name = model_name or os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash-001")
         
         # Initialize client
         try:
