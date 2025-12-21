@@ -37,7 +37,7 @@ class GeminiService:
         if not self.api_key:
             raise ValueError("GEMINI_API_KEY must be set in environment or passed to GeminiService.")
 
-        self.model_name = model_name or os.getenv("GEMINI_MODEL_NAME", "gemini-1.5-flash")
+        self.model_name = model_name or os.getenv("GEMINI_MODEL_NAME", "gemini-2.0-flash")
         
         # Initialize client
         try:
@@ -431,7 +431,7 @@ if __name__ == "__main__":
     async def test():
         try:
             service = GeminiService()
-            print("✅ Service initialized\n")
+            print("Service initialized\n")
             
             # Test intent extraction
             result = await service.extract_intent("Where is the library?")
@@ -440,8 +440,8 @@ if __name__ == "__main__":
             # Test response
             response = await service.generate_response("Hello!")
             print(f"Response: {response[:100]}\n")
-            
+
         except Exception as e:
-            print(f"❌ Error: {e}")
+            print(f"Error: {e}")
     
     asyncio.run(test())
