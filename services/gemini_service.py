@@ -80,6 +80,11 @@ class GeminiService:
             return text.strip()
             
         except Exception as e:
+            error_msg = str(e)
+            if "429" in error_msg or "Resource has been exhausted" in error_msg or "Quota" in error_msg:
+                logger.warning(f"Gemini Quota Exceeded: {e}")
+                return "I'm currently receiving too many requests. Please try again in a moment."
+            
             logger.error(f"Gemini API call failed: {type(e).__name__}: {str(e)}")
             raise
 
